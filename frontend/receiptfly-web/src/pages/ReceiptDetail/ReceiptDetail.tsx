@@ -21,6 +21,7 @@ export function ReceiptDetail() {
     taxType: string;
     accountTitle: string;
     isTaxReturn: boolean;
+    amount: number;
   }>>({});
   
   const receipt = receipts.find(r => r.id === Number(id));
@@ -56,7 +57,8 @@ export function ReceiptDetail() {
             memo: item.memo || '',
             taxType: item.taxType || '10%',
             accountTitle: item.accountTitle || '',
-            isTaxReturn: item.isTaxReturn
+            isTaxReturn: item.isTaxReturn,
+            amount: item.amount
           }
         }));
         return [...prev, item.id];
@@ -103,7 +105,8 @@ export function ReceiptDetail() {
         memo: form.memo,
         taxType: form.taxType,
         accountTitle: form.accountTitle,
-        isTaxReturn: form.isTaxReturn
+        isTaxReturn: form.isTaxReturn,
+        amount: Number(form.amount)
       });
       handleCancelEdit(itemId); // Close and cleanup
     }
@@ -198,6 +201,20 @@ export function ReceiptDetail() {
               {/* Inline Edit Form */}
               {expandedItemIds.includes(item.id) && editForms[item.id] && (
                 <div className={styles.inlineEdit}>
+                  <div className={styles.formGroup}>
+                    <label>金額</label>
+                    <input
+                      type="number"
+                      value={editForms[item.id].amount}
+                      onChange={(e) => setEditForms({
+                        ...editForms,
+                        [item.id]: { ...editForms[item.id], amount: Number(e.target.value) }
+                      })}
+                      onWheel={(e) => e.currentTarget.blur()}
+                      placeholder="金額"
+                    />
+                  </div>
+
                   <div className={styles.formGroup}>
                     <label>AIカテゴリ</label>
                     <input

@@ -15,6 +15,7 @@ interface TransactionItem {
   memo: string;
   taxType: string;
   accountTitle: string;
+  amount: number;
   // Add any other properties that a TransactionItem might have
 }
 
@@ -52,11 +53,14 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     try {
       // Optimistic update
       setReceipts(prevReceipts =>
-        prevReceipts.map(r =>
-          r.id === receiptId
-            ? { ...r, items: r.items.map(i => i.id === itemId ? { ...i, ...updates } : i) }
-            : r
-        )
+        prevReceipts.map(r => {
+          if (r.id === receiptId) {
+            const updatedItems = r.items.map(i => i.id === itemId ? { ...i, ...updates } : i);
+            const newTotal = updatedItems.reduce((sum, item) => sum + item.amount, 0);
+            return { ...r, items: updatedItems, total: newTotal };
+          }
+          return r;
+        })
       );
 
       await fetch(`http://localhost:5159/api/receipts/${receiptId}/items/${itemId}`, {
