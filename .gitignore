@@ -1,1 +1,37 @@
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend (.NET)
+**/bin/
+**/obj/
+**/*.user
+**/*.suo
+**/*.cache
+**/*.log
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Frontend (Node.js)
+**/node_modules/
+**/dist/
+**/.vite/
+**/.next/
+**/build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Documentation (private)
 /CLAUDE.md
