@@ -10,6 +10,28 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: var(--space-lg);
+  gap: var(--space-md);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0; /* Allow truncation if needed */
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.dateText {
+  color: hsl(var(--text-muted));
+  font-size: 0.9rem;
+  white-space: nowrap;
 }
 
 .backButton {
@@ -439,17 +461,53 @@
 }
 
 .saveButton {
-  background: hsl(var(--color-primary));
-  color: white;
+  flex: 1;
+  background-color: #2563eb; /* Hardcoded blue to ensure visibility */
+  color: #ffffff;
   padding: 12px;
   border-radius: var(--radius-md);
   font-weight: 600;
   margin-top: var(--space-sm);
   transition: opacity var(--transition-fast);
+  border: 1px solid #1d4ed8;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  text-align: center;
 }
 
 .saveButton:hover {
   opacity: 0.9;
+  background-color: #1d4ed8;
+}
+
+/* Inline edit styles */
+.inlineEdit {
+  padding: var(--space-md);
+  background: hsl(var(--bg-card));
+  border-top: 1px solid hsl(var(--text-muted) / 0.1);
+}
+
+.inlineEditActions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.cancelButton {
+  flex: 1;
+  background: hsl(var(--text-muted) / 0.2); /* Changed to muted gray for cancel */
+  color: hsl(var(--text-primary));
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition: opacity var(--transition-fast);
+  margin-top: var(--space-sm); /* Match margin-top of saveButton */
+  text-align: center;
+  border: 1px solid transparent; /* Maintain box model consistency */
+}
+
+.cancelButton:hover {
+  background: hsl(var(--text-muted) / 0.3);
 }
 
 .itemAmount {

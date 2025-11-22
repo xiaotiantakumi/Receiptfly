@@ -1,4 +1,4 @@
-import { ArrowLeft, Calendar, Store, Edit2, X } from 'lucide-react';
+import { ArrowLeft, Store, Edit2, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './ReceiptDetail.module.css';
 import { useReceipts } from '../../context/ReceiptContext';
@@ -9,11 +9,19 @@ export function ReceiptDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { receipts, updateItem, updateReceipt } = useReceipts();
-  const [editingItem, setEditingItem] = useState<TransactionItem | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState({ aiCategory: '', aiRisk: '', memo: '', taxType: '', accountTitle: '', isTaxReturn: false });
   const [isEditingReceipt, setIsEditingReceipt] = useState(false);
   const [receiptEditForm, setReceiptEditForm] = useState({ store: '', date: '', tel: '' });
+  // New state to track which items are expanded for inline editing (supports multiple)
+  const [expandedItemIds, setExpandedItemIds] = useState<number[]>([]);
+  // State to hold form data for each expanded item, keyed by item ID
+  const [editForms, setEditForms] = useState<Record<number, {
+    aiCategory: string;
+    aiRisk: string;
+    memo: string;
+    taxType: string;
+    accountTitle: string;
+    isTaxReturn: boolean;
+  }>>({});
   
   const receipt = receipts.find(r => r.id === Number(id));
 
@@ -21,25 +29,47 @@ export function ReceiptDetail() {
     return <div className={styles.container}>Receipt not found</div>;
   }
 
-  const handleCloseModal = () => {
-    setShowEditModal(false);
-    setEditingItem(null);
-  };
-
   const toggleTaxReturn = (itemId: number, currentStatus: boolean) => {
     updateItem(receipt.id, itemId, { isTaxReturn: !currentStatus });
   };
 
-  const openEditModal = (item: TransactionItem) => {
-    setEditingItem(item);
-    setShowEditModal(true);
-    setEditForm({
-      aiCategory: item.aiCategory || '',
-      aiRisk: item.aiRisk || 'Low',
-      memo: item.memo || '',
-      taxType: item.taxType || '10%',
-      accountTitle: item.accountTitle || '',
-      isTaxReturn: item.isTaxReturn
+  const toggleEditItem = (item: TransactionItem) => {
+    setExpandedItemIds(prev => {
+      if (prev.includes(item.id)) {
+        // Close if already open
+        const newIds = prev.filter(id => id !== item.id);
+        // Clean up form state
+        setEditForms(forms => {
+          const newForms = { ...forms };
+          delete newForms[item.id];
+          return newForms;
+        });
+        return newIds;
+      } else {
+        // Open if closed
+        // Initialize form state for this item
+        setEditForms(forms => ({
+          ...forms,
+          [item.id]: {
+            aiCategory: item.aiCategory || '',
+            aiRisk: item.aiRisk || 'Low',
+            memo: item.memo || '',
+            taxType: item.taxType || '10%',
+            accountTitle: item.accountTitle || '',
+            isTaxReturn: item.isTaxReturn
+          }
+        }));
+        return [...prev, item.id];
+      }
+    });
+  };
+
+  const handleCancelEdit = (itemId: number) => {
+    setExpandedItemIds(prev => prev.filter(id => id !== itemId));
+    setEditForms(forms => {
+      const newForms = { ...forms };
+      delete newForms[itemId];
+      return newForms;
     });
   };
 
@@ -64,17 +94,18 @@ export function ReceiptDetail() {
     }
   };
 
-  const handleSaveEdit = () => {
-    if (editingItem) {
-      updateItem(receipt.id, editingItem.id, {
-        aiCategory: editForm.aiCategory,
-        aiRisk: editForm.aiRisk,
-        memo: editForm.memo,
-        taxType: editForm.taxType,
-        accountTitle: editForm.accountTitle,
-        isTaxReturn: editForm.isTaxReturn
+  const handleSaveEdit = (itemId: number) => {
+    const form = editForms[itemId];
+    if (form) {
+      updateItem(receipt.id, itemId, {
+        aiCategory: form.aiCategory,
+        aiRisk: form.aiRisk,
+        memo: form.memo,
+        taxType: form.taxType,
+        accountTitle: form.accountTitle,
+        isTaxReturn: form.isTaxReturn
       });
-      setEditingItem(null);
+      handleCancelEdit(itemId); // Close and cleanup
     }
   };
 
@@ -85,7 +116,7 @@ export function ReceiptDetail() {
   return (
     <div className={`${styles.container} animate-slide-in`}>
       <header className={styles.header}>
-        <div className={styles.headerTop}>
+        <div className={styles.headerLeft}>
           <button onClick={() => navigate(-1)} className={styles.backButton}>
             <ArrowLeft size={24} />
           </button>
@@ -93,15 +124,12 @@ export function ReceiptDetail() {
             <Store size={20} />
             <h1>{receipt.store}</h1>
           </div>
+        </div>
+        <div className={styles.headerRight}>
+          <span className={styles.dateText}>{receipt.date}</span>
           <button onClick={handleReceiptEditClick} className={styles.editReceiptButton}>
             <Edit2 size={18} />
           </button>
-        </div>
-        <div className={styles.receiptMeta}>
-          <div className={styles.metaRow}>
-            <Calendar size={16} />
-            <span>{receipt.date}</span>
-          </div>
         </div>
       </header>
 
@@ -131,129 +159,142 @@ export function ReceiptDetail() {
         <h2 className={styles.sectionTitle}>購入品目</h2>
         <div className={styles.itemsList}>
           {receipt.items.map((item) => (
-            <div key={item.id} className={styles.itemRow}> {/* Removed onClick for toggleTaxReturn */}
-              {/* Checkbox wrapper removed */}
-              
-              <div className={styles.itemInfo}>
-                <span className={styles.itemName}>{item.name}</span>
-                <div className={styles.itemMetaTags}>
-                  {item.aiCategory && <span className={styles.aiTag}>🤖 {item.aiCategory}</span>}
-                  {item.aiRisk && (
-                    <span className={`${styles.riskTag} ${styles[item.aiRisk.toLowerCase()]}`}>
-                      Risk: {item.aiRisk}
-                    </span>
-                  )}
-                  {item.taxType && <span className={styles.taxTypeTag}>{item.taxType}</span>}
-                  {item.accountTitle && <span className={styles.accountTitleTag}>{item.accountTitle}</span>}
+            <div key={item.id}>
+              <div className={styles.itemRow} onClick={() => toggleEditItem(item)}>
+                {/* Checkbox wrapper removed */}
+                
+                <div className={styles.itemInfo}>
+                  <span className={styles.itemName}>{item.name}</span>
+                  <div className={styles.itemMetaTags}>
+                    {item.aiCategory && <span className={styles.aiTag}>🤖 {item.aiCategory}</span>}
+                    {item.aiRisk && (
+                      <span className={`${styles.riskTag} ${styles[item.aiRisk.toLowerCase()]}`}>
+                        Risk: {item.aiRisk}
+                      </span>
+                    )}
+                    {item.taxType && <span className={styles.taxTypeTag}>{item.taxType}</span>}
+                    {item.accountTitle && <span className={styles.accountTitleTag}>{item.accountTitle}</span>}
+                  </div>
+                  {item.memo && <div className={styles.itemMemo}>📝 {item.memo}</div>}
                 </div>
-                {item.memo && <div className={styles.itemMemo}>📝 {item.memo}</div>}
+                
+                <div className={styles.actionsColumn}>
+                  <button 
+                    className={styles.editButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleEditItem(item);
+                    }}
+                  >
+                    <Edit2 size={16} />
+                  </button>
+                  <div className={styles.amountColumn}>
+                    <span className={styles.itemAmount}>¥{item.amount}</span>
+                    {item.isTaxReturn && <span className={styles.taxBadge}>申告用</span>}
+                  </div>
+                </div>
               </div>
               
-              <div className={styles.actionsColumn}>
-                 <button 
-                   className={styles.editButton}
-                   onClick={(e) => {
-                     e.stopPropagation();
-                     openEditModal(item);
-                   }}
-                 >
-                   <Edit2 size={16} />
-                 </button>
-                 <div className={styles.amountColumn}>
-                   <span className={styles.itemAmount}>¥{item.amount}</span>
-                   {item.isTaxReturn && <span className={styles.taxBadge}>申告用</span>}
-                 </div>
-              </div>
+              {/* Inline Edit Form */}
+              {expandedItemIds.includes(item.id) && editForms[item.id] && (
+                <div className={styles.inlineEdit}>
+                  <div className={styles.formGroup}>
+                    <label>AIカテゴリ</label>
+                    <input
+                      type="text"
+                      value={editForms[item.id].aiCategory}
+                      onChange={(e) => setEditForms({
+                        ...editForms,
+                        [item.id]: { ...editForms[item.id], aiCategory: e.target.value }
+                      })}
+                      placeholder="例: 事務用品費"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>リスク</label>
+                    <select
+                      value={editForms[item.id].aiRisk}
+                      onChange={(e) => setEditForms({
+                        ...editForms,
+                        [item.id]: { ...editForms[item.id], aiRisk: e.target.value }
+                      })}
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                    </select>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>税区分</label>
+                    <select
+                      value={editForms[item.id].taxType}
+                      onChange={(e) => setEditForms({
+                        ...editForms,
+                        [item.id]: { ...editForms[item.id], taxType: e.target.value }
+                      })}
+                    >
+                      <option value="10%">10%</option>
+                      <option value="8%">8%</option>
+                      <option value="0%">0%</option>
+                    </select>
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>勘定科目</label>
+                    <input
+                      type="text"
+                      value={editForms[item.id].accountTitle}
+                      onChange={(e) => setEditForms({
+                        ...editForms,
+                        [item.id]: { ...editForms[item.id], accountTitle: e.target.value }
+                      })}
+                      placeholder="例: 消耗品費"
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>メモ</label>
+                    <textarea
+                      value={editForms[item.id].memo}
+                      onChange={(e) => setEditForms({
+                        ...editForms,
+                        [item.id]: { ...editForms[item.id], memo: e.target.value }
+                      })}
+                      placeholder="メモを入力"
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.checkboxLabel}>
+                      <input
+                        type="checkbox"
+                        checked={editForms[item.id].isTaxReturn}
+                        onChange={(e) => setEditForms({
+                          ...editForms,
+                          [item.id]: { ...editForms[item.id], isTaxReturn: e.target.checked }
+                        })}
+                      />
+                      申告対象にする
+                    </label>
+                  </div>
+
+                  <div className={styles.inlineEditActions}>
+                    <button className={styles.saveButton} onClick={() => handleSaveEdit(item.id)}>
+                      保存する
+                    </button>
+                    <button className={styles.cancelButton} onClick={() => handleCancelEdit(item.id)}>
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
       </section>
-
-      {showEditModal && editingItem && (
-        <div className={styles.editModal} onClick={handleCloseModal}>
-          <div className={styles.editModalContent} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.editModalHeader}>
-              <h3 className={styles.editModalTitle}>品目編集</h3>
-              <button className={styles.editModalClose} onClick={handleCloseModal}>
-                <X size={24} />
-              </button>
-            </div>
-            
-            <div className={styles.editModalBody}>
-              {/* Removed 'category' form group as it's not in TransactionItem */}
-
-              <div className={styles.formGroup}>
-                <label>AIカテゴリ</label>
-                <input
-                  type="text"
-                  value={editingItem.aiCategory || ''}
-                  onChange={(e) => setEditingItem({ ...editingItem, aiCategory: e.target.value })}
-                  placeholder="例: 事務用品費"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>リスク</label>
-                <select
-                  value={editingItem.aiRisk || 'Low'}
-                  onChange={(e) => setEditingItem({ ...editingItem, aiRisk: e.target.value })}
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </select>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>税区分</label>
-                <select
-                  value={editingItem.taxType || '10%'}
-                  onChange={(e) => setEditingItem({ ...editingItem, taxType: e.target.value })}
-                >
-                  <option value="10%">10%</option>
-                  <option value="8%">8%</option>
-                  <option value="0%">0%</option>
-                </select>
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>勘定科目</label>
-                <input
-                  type="text"
-                  value={editingItem.accountTitle || ''}
-                  onChange={(e) => setEditingItem({ ...editingItem, accountTitle: e.target.value })}
-                  placeholder="例: 消耗品費"
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label>メモ</label>
-                <textarea
-                  value={editingItem.memo || ''}
-                  onChange={(e) => setEditingItem({ ...editingItem, memo: e.target.value })}
-                  placeholder="メモを入力"
-                  rows={3}
-                />
-              </div>
-
-              <div className={styles.checkboxGroup}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={editingItem.isTaxReturn}
-                    onChange={(e) => setEditingItem({ ...editingItem, isTaxReturn: e.target.checked })}
-                  />
-                  申告対象にする
-                </label>
-              </div>
-
-              <button className={styles.saveButton} onClick={handleSaveEdit}>
-                保存する
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Receipt Edit Modal */}
       {isEditingReceipt && (
