@@ -136,6 +136,23 @@
   font-size: 0.8rem;
 }
 
+.editModalTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--text-primary));
+  margin: 0;
+}
+
+.editModalBody {
+  padding: 1.5rem;
+}
+
+.editModalClose {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(var(--color-secondary));
+}
+
 .totalAmount {
   font-size: 1.5rem;
   font-weight: 700;
@@ -343,6 +360,8 @@
   border: 1px solid hsl(var(--text-muted) / 0.2);
   box-shadow: var(--shadow-lg);
   animation: scaleIn 0.2s ease-out;
+  overflow-y: auto;
+  max-height: 90vh;
 }
 
 @keyframes scaleIn {

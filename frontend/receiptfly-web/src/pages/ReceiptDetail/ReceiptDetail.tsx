@@ -10,6 +10,7 @@ export function ReceiptDetail() {
   const { id } = useParams();
   const { receipts, updateItem, updateReceipt } = useReceipts();
   const [editingItem, setEditingItem] = useState<TransactionItem | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [editForm, setEditForm] = useState({ aiCategory: '', aiRisk: '', memo: '', taxType: '', accountTitle: '', isTaxReturn: false });
   const [isEditingReceipt, setIsEditingReceipt] = useState(false);
   const [receiptEditForm, setReceiptEditForm] = useState({ store: '', date: '', tel: '' });
@@ -20,12 +21,18 @@ export function ReceiptDetail() {
     return <div className={styles.container}>Receipt not found</div>;
   }
 
+  const handleCloseModal = () => {
+    setShowEditModal(false);
+    setEditingItem(null);
+  };
+
   const toggleTaxReturn = (itemId: number, currentStatus: boolean) => {
     updateItem(receipt.id, itemId, { isTaxReturn: !currentStatus });
   };
 
   const openEditModal = (item: TransactionItem) => {
     setEditingItem(item);
+    setShowEditModal(true);
     setEditForm({
       aiCategory: item.aiCategory || '',
       aiRisk: item.aiRisk || 'Low',
@@ -162,80 +169,84 @@ export function ReceiptDetail() {
         </div>
       </section>
 
-      {editingItem && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h3>品目編集</h3>
-              <button onClick={() => setEditingItem(null)} className={styles.closeButton}>
+      {showEditModal && editingItem && (
+        <div className={styles.editModal} onClick={handleCloseModal}>
+          <div className={styles.editModalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.editModalHeader}>
+              <h3 className={styles.editModalTitle}>品目編集</h3>
+              <button className={styles.editModalClose} onClick={handleCloseModal}>
                 <X size={24} />
               </button>
             </div>
             
-            <div className={styles.modalBody}>
-              <div className={styles.formGroup}>
-                <label className={styles.checkboxLabel}>
-                  <input 
-                    type="checkbox"
-                    checked={editForm.isTaxReturn}
-                    onChange={(e) => setEditForm({...editForm, isTaxReturn: e.target.checked})}
-                  />
-                  申告対象にする
-                </label>
-              </div>
+            <div className={styles.editModalBody}>
+              {/* Removed 'category' form group as it's not in TransactionItem */}
 
               <div className={styles.formGroup}>
                 <label>AIカテゴリ</label>
-                <input 
-                  type="text" 
-                  value={editForm.aiCategory}
-                  onChange={(e) => setEditForm({...editForm, aiCategory: e.target.value})}
+                <input
+                  type="text"
+                  value={editingItem.aiCategory || ''}
+                  onChange={(e) => setEditingItem({ ...editingItem, aiCategory: e.target.value })}
+                  placeholder="例: 事務用品費"
                 />
               </div>
-              
+
               <div className={styles.formGroup}>
                 <label>リスク</label>
-                <select 
-                  value={editForm.aiRisk}
-                  onChange={(e) => setEditForm({...editForm, aiRisk: e.target.value})}
+                <select
+                  value={editingItem.aiRisk || 'Low'}
+                  onChange={(e) => setEditingItem({ ...editingItem, aiRisk: e.target.value })}
                 >
                   <option value="Low">Low</option>
                   <option value="Medium">Medium</option>
                   <option value="High">High</option>
                 </select>
               </div>
-              
+
               <div className={styles.formGroup}>
                 <label>税区分</label>
-                <select 
-                  value={editForm.taxType}
-                  onChange={(e) => setEditForm({...editForm, taxType: e.target.value})}
+                <select
+                  value={editingItem.taxType || '10%'}
+                  onChange={(e) => setEditingItem({ ...editingItem, taxType: e.target.value })}
                 >
                   <option value="10%">10%</option>
-                  <option value="8%">8% (軽減)</option>
-                  <option value="0%">対象外</option>
+                  <option value="8%">8%</option>
+                  <option value="0%">0%</option>
                 </select>
               </div>
 
               <div className={styles.formGroup}>
                 <label>勘定科目</label>
-                <input 
-                  type="text" 
-                  value={editForm.accountTitle}
-                  onChange={(e) => setEditForm({...editForm, accountTitle: e.target.value})}
+                <input
+                  type="text"
+                  value={editingItem.accountTitle || ''}
+                  onChange={(e) => setEditingItem({ ...editingItem, accountTitle: e.target.value })}
                   placeholder="例: 消耗品費"
                 />
               </div>
 
               <div className={styles.formGroup}>
                 <label>メモ</label>
-                <textarea 
-                  value={editForm.memo}
-                  onChange={(e) => setEditForm({...editForm, memo: e.target.value})}
+                <textarea
+                  value={editingItem.memo || ''}
+                  onChange={(e) => setEditingItem({ ...editingItem, memo: e.target.value })}
+                  placeholder="メモを入力"
                   rows={3}
                 />
               </div>
-              
+
+              <div className={styles.checkboxGroup}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={editingItem.isTaxReturn}
+                    onChange={(e) => setEditingItem({ ...editingItem, isTaxReturn: e.target.checked })}
+                  />
+                  申告対象にする
+                </label>
+              </div>
+
               <button className={styles.saveButton} onClick={handleSaveEdit}>
                 保存する
               </button>

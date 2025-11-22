@@ -102,13 +102,16 @@ export function ManualEntry() {
 
   return (
     <div className={`${styles.container} animate-fade-in`}>
-      <header className={styles.header}>
-        <button onClick={() => navigate(-1)} className={styles.backButton}>
+      <div className={styles.header}>
+        <button 
+          className={styles.backButton}
+          onClick={() => navigate(-1)}
+          type="button"
+        >
           <ArrowLeft size={24} />
         </button>
-        <h1>手動入力</h1>
-        <div className={styles.placeholder} />
-      </header>
+        <h1 className={styles.title}>手動レシート登録</h1>
+      </div>
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <section className={styles.section}>
