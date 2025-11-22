@@ -23,6 +23,7 @@ interface ReceiptContextType {
   loading: boolean;
   updateItem: (receiptId: number, itemId: number, updates: Partial<TransactionItem>) => Promise<void>;
   updateReceipt: (receiptId: number, updates: Partial<Receipt>) => Promise<void>;
+  createReceipt: (receipt: any) => Promise<Receipt | null>;
 }
 
 const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined);
@@ -87,8 +88,29 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const createReceipt = async (receipt: any): Promise<Receipt | null> => {
+    try {
+      const res = await fetch('http://localhost:5159/api/receipts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(receipt),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to create receipt');
+      }
+
+      const newReceipt = await res.json();
+      setReceipts(prev => [newReceipt, ...prev]);
+      return newReceipt;
+    } catch (err) {
+      console.error('Failed to create receipt:', err);
+      return null;
+    }
+  };
+
   return (
-    <ReceiptContext.Provider value={{ receipts, loading, updateItem, updateReceipt }}>
+    <ReceiptContext.Provider value={{ receipts, loading, updateItem, updateReceipt, createReceipt }}>
       {children}
     </ReceiptContext.Provider>
   );

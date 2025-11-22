@@ -87,6 +87,40 @@ public class ReceiptsController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost]
+    public async Task<IActionResult> CreateReceipt([FromBody] CreateReceiptRequest request)
+    {
+        var receipt = new Receipt
+        {
+            Store = request.Store,
+            Date = request.Date,
+            Address = request.Address,
+            Tel = request.Tel,
+            PaymentMethod = request.PaymentMethod,
+            RegistrationNumber = request.RegistrationNumber,
+            CreditAccount = request.CreditAccount,
+            Items = request.Items.Select(item => new TransactionItem
+            {
+                Name = item.Name,
+                Amount = item.Amount,
+                IsTaxReturn = item.IsTaxReturn ?? false,
+                Category = item.Category,
+                AiCategory = item.AiCategory,
+                AiRisk = item.AiRisk ?? "Low",
+                Memo = item.Memo,
+                TaxType = item.TaxType,
+                AccountTitle = item.AccountTitle
+            }).ToList()
+        };
+
+        receipt.Total = receipt.Items.Sum(i => i.Amount);
+
+        _context.Receipts.Add(receipt);
+        await _context.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetReceipt), new { id = receipt.Id }, receipt);
+    }
+
     public class UpdateItemRequest
     {
         public bool? IsTaxReturn { get; set; }
@@ -107,5 +141,30 @@ public class ReceiptsController : ControllerBase
         public string? PaymentMethod { get; set; }
         public string? RegistrationNumber { get; set; }
         public string? CreditAccount { get; set; }
+    }
+
+    public class CreateReceiptRequest
+    {
+        public required string Store { get; set; }
+        public required string Date { get; set; }
+        public string? Address { get; set; }
+        public string? Tel { get; set; }
+        public string? PaymentMethod { get; set; }
+        public string? RegistrationNumber { get; set; }
+        public string? CreditAccount { get; set; }
+        public required List<CreateItemRequest> Items { get; set; }
+    }
+
+    public class CreateItemRequest
+    {
+        public required string Name { get; set; }
+        public required int Amount { get; set; }
+        public bool? IsTaxReturn { get; set; }
+        public string? Category { get; set; }
+        public string? AiCategory { get; set; }
+        public string? AiRisk { get; set; }
+        public string? Memo { get; set; }
+        public string? TaxType { get; set; }
+        public string? AccountTitle { get; set; }
     }
 }

@@ -247,14 +247,14 @@
 }
 
 .transactionAmount {
+  font-size: 1rem;
   font-weight: 600;
   color: hsl(var(--text-primary));
 }
 
 .taxReturnAmount {
-  font-size: 0.75rem;
-  color: hsl(var(--color-secondary));
-  font-weight: 500;
+  font-size: 0.85rem;
+  color: hsl(var(--text-muted));
 }
 
 .taxBadge {

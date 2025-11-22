@@ -1,8 +1,10 @@
-import { Camera, Image as ImageIcon, X } from 'lucide-react';
+import { Camera, Image as ImageIcon, X, Edit } from 'lucide-react';
 import styles from './Scan.module.css';
-import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export function Scan() {
+  const navigate = useNavigate();
+  
   return (
     <div className={`${styles.container} animate-fade-in`}>
       <div className={styles.cameraView}>
@@ -35,7 +37,16 @@ export function Scan() {
       </div>
       
       <div className={styles.recentScans}>
-        <h3 className={styles.recentTitle}>最近のスキャン</h3>
+        <div className={styles.recentHeader}>
+          <h3 className={styles.recentTitle}>最近のスキャン</h3>
+          <button 
+            className={styles.manualEntryButton}
+            onClick={() => navigate('/manual-entry')}
+          >
+            <Edit size={18} />
+            手動入力
+          </button>
+        </div>
         <div className={styles.scansList}>
           <div className={styles.emptyState}>
             まだスキャンされたレシートはありません

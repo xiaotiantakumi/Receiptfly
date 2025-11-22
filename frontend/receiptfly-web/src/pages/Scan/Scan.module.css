@@ -107,14 +107,48 @@
 }
 
 .recentScans {
-  padding: var(--space-lg);
+  padding: 1.5rem;
   flex: 1;
 }
 
+.recentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .recentTitle {
-  font-size: 1rem;
-  color: hsl(var(--text-secondary));
-  margin-bottom: var(--space-md);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: hsl(var(--text-primary));
+  margin: 0;
+}
+
+.manualEntryButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background: hsl(var(--color-primary));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px hsl(var(--color-primary) / 0.3);
+}
+
+.manualEntryButton:hover {
+  background: hsl(var(--color-primary) / 0.9);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px hsl(var(--color-primary) / 0.4);
+}
+
+.manualEntryButton:active {
+  transform: translateY(0);
 }
 
 .emptyState {
