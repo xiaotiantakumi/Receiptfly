@@ -81,7 +81,7 @@ export function Dashboard() {
                   </div>
                   
                   <div className={styles.amountColumn}>
-                    <span className={styles.transactionAmount}>-¥{receipt.total.toLocaleString()}</span>
+                    <span className={styles.transactionAmount}>¥{receipt.total.toLocaleString()}</span>
                     {taxReturnAmount > 0 && (
                       <span className={styles.taxReturnAmount}>
                         (申告: ¥{taxReturnAmount.toLocaleString()})
