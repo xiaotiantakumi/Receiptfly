@@ -1,29 +1,123 @@
-# Requirements Definition
+# 要件定義
 
-## Project Overview
-**Receiptfly** is a tax return support application. Initially, it will function as a household bookkeeping app focused on receipt scanning to broaden its user base.
+## プロジェクト概要
 
-## Core Features (Phase 1: Household Bookkeeping)
+**Receiptfly**は確定申告支援アプリケーションです。当初は領収書スキャン機能に特化した家計簿アプリとして開発し、ユーザー層の拡大を図ります。
 
-### 1. Receipt Scanning & Data Entry
-- **Continuous Scanning**: Ability to take multiple photos of receipts in succession.
-- **Image Processing**: Upload images to the backend.
-- **OCR / Data Extraction**:
-    - Extract total amount.
-    - **Line Item Extraction**: Extract individual items (product name, price, category).
-    - **Categorization**: Auto-suggest categories (e.g., Food, Transport, Utilities) based on item names.
+## 主要機能（第 1 フェーズ：家計簿機能）
 
-### 2. Data Management & Visualization
-- **Transaction List**: View parsed receipt data as a list of expenses.
-- **Manual Editing**: Correct OCR errors or manually add entries.
-- **Dashboard/Graphs**: Visualize spending by category, month, etc.
+### 1. 領収書スキャンとデータ入力
 
-## Future Scope (Phase 2: Tax Return Support)
-- **Multi-tenancy**: Support for Tax Accountant Offices to manage multiple clients.
-- **Tax Filing Export**: Export data in formats suitable for tax returns (Blue/White return).
-- **User Management**: Role-based access (Accountant vs. Client).
+#### 実装状況: ✅ 一部実装済み
 
-## User Experience Goals
-- **Speed**: Fast scanning flow.
-- **Accuracy**: High precision in line-item extraction.
-- **Simplicity**: Easy to use for general consumers (household use).
+- **連続スキャン機能**: ✅ **実装完了**
+  - バッチアップロードエンドポイント（`POST /api/ocr/batch`）で複数ファイルに対応
+  - フロントエンド：「スキャン」ページコンポーネントを実装済み
+- **画像処理機能**: ✅ **実装完了**
+  - `OcrController`経由でバックエンドへ画像をアップロード可能
+  - 対応画像形式：JPG、JPEG、PNG、GIF、BMP、PDF
+  - ファイル保存には`IImageStorageService`を使用（現在はローカルストレージに保存）
+- **OCR/データ抽出機能**: ✅ **実装完了**
+  - Google Cloud Vision API を統合（`GoogleVisionOcrService`）
+  - 画像および PDF からのテキスト抽出が可能
+  - テスト用のモック OCR サービスも利用可能（`MockGoogleVisionOcrService`）
+- **明細項目抽出機能**: ⚠️ **未実装**
+  - 現在は生テキストのみを抽出
+  - 構造化データ（商品名、価格、カテゴリ）の抽出機能は未実装
+  - 解析ロジックの実装または高度な OCR サービス（例：Azure Document Intelligence）が必要
+- **カテゴリ分類機能**: ⚠️ **未実装**
+  - アイテム名に基づく自動カテゴリ提案機能は未実装
+  - `TransactionItem`エンティティにはカテゴリフィールドが存在するが、AI/ML 技術の統合が必要
+
+### 2. データ管理と可視化
+
+#### 実装状況: ✅ 大部分実装済み
+
+- **取引一覧機能**: ✅ **実装完了**
+  - `GET /api/receipts`エンドポイントで全領収書を取得可能
+  - フロントエンド：「ダッシュボード」ページで領収書一覧を表示
+  - 領収書詳細表示機能も実装済み（`ReceiptDetail`ページ）
+- **手動編集機能**: ✅ **実装完了**
+  - `PUT /api/receipts/{id}` - 領収書情報の更新
+  - `PUT /api/receipts/{id}/items/{itemId}` - 取引明細の更新
+  - フロントエンド：`ReceiptDetail`ページで編集可能
+  - 手動入力用ページも実装済み（`ManualEntry`）
+- **ダッシュボード/グラフ機能**: ⚠️ **部分的に実装済み**
+  - `Analytics`ページコンポーネントを実装済み
+  - カテゴリ別・月別などの可視化機能は完全実装には至っていない
+  - データ構造は分析機能をサポート済み（カテゴリ・日付フィールドが利用可能）
+
+### 3. 領収書データモデル
+
+#### 実装状況: ✅ 完全実装済み
+
+- **領収書エンティティ**: ✅ 完成済み
+  - 店舗、日付、合計金額、住所、電話番号、支払方法
+  - 登録番号、クレジット口座
+  - 取引明細と 1 対多の関連付け
+- **取引明細エンティティ**: ✅ 完成済み
+  - 名称、金額、確定申告対象有無、カテゴリ
+  - AiCategory、AiRisk、メモ
+  - 税種別、口座タイトル
+  - 領収書への外部キー関係を設定
+
+## 今後の展開予定（フェーズ 2：確定申告対応）
+
+### 未実装項目
+
+- **マルチテナント対応**: 税理士事務所が複数クライアントを管理できる機能
+  - _アーキテクチャ注記_: 現行実装はシングルテナントモデルを採用。マルチテナント対応には以下が必要:
+    - ユーザー/アカウントエンティティ
+    - テナント/組織エンティティ
+    - 行レベルセキュリティまたはテナントフィルタリング機能
+- **確定申告データ出力**: 確定申告書（青色申告/白色申告）に適した形式でのデータ出力機能
+  - _アーキテクチャ注記_: データモデルには既に税関連フィールド（`IsTaxReturn`、`AccountTitle`、`TaxType`）が含まれている
+- **ユーザー管理機能**: 役割ベースのアクセス制御（税理士向け/クライアント向け）
+  - _アーキテクチャ注記_: 認証機能は未実装。以下の機能追加が必要:
+    - ユーザーエンティティ
+    - ロールベース認証（RBAC）
+    - JWT トークン検証ミドルウェア
+
+## ユーザーエクスペリエンスの目標
+
+- **速度**: 迅速なスキャン処理フロー
+  - ✅ 複数の領収書を一括アップロード可能
+  - ⚠️ OCR 処理速度は Google Vision API の応答時間に依存
+- **正確性**: 明細項目抽出の高い精度
+  - ⚠️ 現在は生テキストのみ抽出可能。構造化データの抽出は今後の課題
+  - ⚠️ OCR 処理の誤りは手動で修正可能
+- **操作性**: 一般ユーザー（個人利用）にも使いやすい設計
+  - ✅ React コンポーネントを採用したクリーンな UI
+  - ✅ ページ間の直感的なナビゲーション
+
+## API エンドポイント
+
+### 実装済みエンドポイント
+
+- `POST /api/ocr` - 単一の画像/PDF を OCR 処理
+- `POST /api/ocr/batch` - 複数の画像/PDF を一括 OCR 処理
+- `GET /api/receipts` - すべての領収書を取得
+- `GET /api/receipts/{id}` - ID で特定の領収書を取得
+- `POST /api/receipts` - 新規領収書を作成
+- `PUT /api/receipts/{id}` - 既存領収書を更新
+- `PUT /api/receipts/{id}/items/{itemId}` - 取引明細項目を更新
+
+### 未実装のエンドポイント（今後対応予定）
+
+- `DELETE /api/receipts/{id}` - 領収書を削除
+- `DELETE /api/receipts/{id}/items/{itemId}` - 取引明細項目を削除
+- `GET /api/receipts/analytics` - 分析データを取得
+- 認証関連エンドポイント（認証機能実装時）
+
+## 技術的負債と既知の問題点
+
+1. **データベースマイグレーション**: 現在は適切なマイグレーション処理ではなく `EnsureCreated()` を使用
+   - TODO: マイグレーションの自動検出機能を実装し、`Migrate()` メソッドを使用するように修正
+2. **OCR テキスト解析**: 生テキストの抽出のみ実施しており、構造化データの解析は未実装
+   - TODO: 領収書解析ロジックを実装するか、専用の OCR サービスへ移行を検討
+3. **エラー処理**: 基本的なエラー処理は実装済みだが、さらなる改善の余地あり
+   - TODO: 包括的なエラー処理と入力検証機能を追加
+4. **認証機能**: 未実装状態
+   - TODO: 認証ミドルウェアとユーザー管理システムを実装
+5. **ファイルストレージ**: ローカルストレージのみ使用しており、本番環境には不適
+   - TODO: クラウドストレージ（Supabase Storage 等）への移行を実施

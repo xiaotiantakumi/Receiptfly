@@ -37,22 +37,12 @@ export GOOGLE_CLOUD_API_KEY="hogehoge"
 ```bash
 cd backend
 dotnet restore Receiptfly.sln
+# ポート5159が使用中の場合は既存のプロセスを停止
+lsof -ti :5159 | xargs kill -9 2>/dev/null || true
 dotnet run --project Receiptfly.Api/Receiptfly.Api.csproj
 ```
 
 バックエンドは `http://localhost:5159` で起動します。
-
-#### ポートが使用中の場合の対処法
-
-`address already in use` エラーが発生した場合、既に起動しているプロセスを停止します：
-
-```bash
-# ポート5159を使用しているプロセスを確認
-lsof -i :5159
-
-# プロセスIDを確認して停止（PIDは上記コマンドで確認した値に置き換える）
-kill -9 <PID>
-```
 
 ### フロントエンドの起動
 
