@@ -6,3 +6,4 @@ public interface IImageStorageService
     Task<bool> DeleteImageAsync(string filePath, CancellationToken cancellationToken = default);
 }
 
+

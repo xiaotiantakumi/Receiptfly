@@ -9,10 +9,19 @@ export function Dashboard() {
   const { receipts, loading } = useReceipts();
 
   // Calculate monthly totals
-  const monthlyTotal = receipts.length > 0 ? receipts.reduce((sum, r) => sum + r.total, 0) : 0;
-  const monthlyTaxReturnTotal = receipts.length > 0 ? receipts.reduce((sum, r) => {
-    return sum + r.items.filter(i => i.isTaxReturn).reduce((subSum, i) => subSum + i.amount, 0);
-  }, 0) : 0;
+  const monthlyTotal =
+    receipts.length > 0 ? receipts.reduce((sum, r) => sum + r.total, 0) : 0;
+  const monthlyTaxReturnTotal =
+    receipts.length > 0
+      ? receipts.reduce((sum, r) => {
+          return (
+            sum +
+            r.items
+              .filter((i) => i.isTaxReturn)
+              .reduce((subSum, i) => subSum + i.amount, 0)
+          );
+        }, 0)
+      : 0;
 
   return (
     <div className={`${styles.container} animate-fade-in`}>
@@ -31,14 +40,18 @@ export function Dashboard() {
               <span className={styles.cardLabel}>今月の支出</span>
               <div className={styles.amountWrapper}>
                 <span className={styles.currency}>¥</span>
-                <span className={styles.amount}>{monthlyTotal.toLocaleString()}</span>
+                <span className={styles.amount}>
+                  {monthlyTotal.toLocaleString()}
+                </span>
               </div>
             </div>
             <div className={styles.taxTotalBlock}>
               <span className={styles.cardLabel}>申告対象</span>
               <div className={styles.amountWrapperSmall}>
                 <span className={styles.currencySmall}>¥</span>
-                <span className={styles.amountSmall}>{monthlyTaxReturnTotal.toLocaleString()}</span>
+                <span className={styles.amountSmall}>
+                  {monthlyTaxReturnTotal.toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
@@ -47,15 +60,13 @@ export function Dashboard() {
             <span>先月比 +12%</span>
           </div>
         </div>
-
-
       </section>
 
       <section className={styles.recentSection}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>最近のレシート</h2>
         </div>
-        
+
         <div className={styles.transactionList}>
           {loading ? (
             <div>読み込み中...</div>
@@ -64,24 +75,28 @@ export function Dashboard() {
           ) : (
             receipts.map((receipt) => {
               const taxReturnAmount = receipt.items
-                .filter(item => item.isTaxReturn)
+                .filter((item) => item.isTaxReturn)
                 .reduce((sum, item) => sum + item.amount, 0);
 
               return (
-                <div 
-                  key={receipt.id} 
+                <div
+                  key={receipt.id}
                   className={styles.transactionItem}
                   onClick={() => navigate(`/receipts/${receipt.id}`)}
                 >
                   <div className={styles.transactionIcon}>🧾</div>
-                  
+
                   <div className={styles.transactionInfo}>
                     <span className={styles.itemName}>{receipt.store}</span>
-                    <span className={styles.itemMeta}>{receipt.date} • {receipt.items.length}点</span>
+                    <span className={styles.itemMeta}>
+                      {receipt.date} • {receipt.items.length}点
+                    </span>
                   </div>
-                  
+
                   <div className={styles.amountColumn}>
-                    <span className={styles.transactionAmount}>¥{receipt.total.toLocaleString()}</span>
+                    <span className={styles.transactionAmount}>
+                      ¥{receipt.total.toLocaleString()}
+                    </span>
                     {taxReturnAmount > 0 && (
                       <span className={styles.taxReturnAmount}>
                         (申告: ¥{taxReturnAmount.toLocaleString()})

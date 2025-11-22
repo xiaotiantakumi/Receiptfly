@@ -5,3 +5,4 @@ public interface IOcrService
     Task<string> ExtractTextAsync(string imageFilePath, CancellationToken cancellationToken = default);
 }
 
+
