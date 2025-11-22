@@ -165,6 +165,34 @@
   border-radius: 8px;
 }
 
+.listItemContent {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.favoriteButton {
+  background: none;
+  border: none;
+  color: hsl(var(--text-muted));
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favoriteButton:hover {
+  background: hsl(var(--text-muted) / 0.1);
+  color: hsl(var(--text-secondary));
+}
+
+.favoriteButton.active {
+  color: hsl(45 90% 50%);
+}
+
 .listItem span {
   color: hsl(var(--text-primary));
 }

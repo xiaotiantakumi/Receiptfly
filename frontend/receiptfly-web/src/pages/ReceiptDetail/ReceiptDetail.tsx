@@ -5,10 +5,25 @@ import { useReceipts } from '../../context/ReceiptContext';
 import { useState } from 'react';
 import { type TransactionItem } from '../../data/mockData';
 
+import { useSettings } from '../../context/SettingsContext';
+
 export function ReceiptDetail() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { receipts, updateItem, updateReceipt } = useReceipts();
+  const { settings } = useSettings();
+  
+  const majorAccountTitles = settings.accountTitles
+    .filter(t => t.isFavorite)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(t => t.name);
+
+  const otherAccountTitles = settings.accountTitles
+    .filter(t => !t.isFavorite)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(t => t.name);
+
+  // State to hold form data for each expanded item, keyed by item ID
   const [isEditingReceipt, setIsEditingReceipt] = useState(false);
   const [receiptEditForm, setReceiptEditForm] = useState({ store: '', date: '', tel: '' });
   // New state to track which items are expanded for inline editing (supports multiple)
@@ -260,15 +275,44 @@ export function ReceiptDetail() {
 
                   <div className={styles.formGroup}>
                     <label>勘定科目</label>
-                    <input
-                      type="text"
-                      value={editForms[item.id].accountTitle}
-                      onChange={(e) => setEditForms({
-                        ...editForms,
-                        [item.id]: { ...editForms[item.id], accountTitle: e.target.value }
-                      })}
-                      placeholder="例: 消耗品費"
-                    />
+                    <div className={styles.accountTitleSelector}>
+                      <div className={styles.quickSelect}>
+                        {majorAccountTitles.map(title => (
+                          <button
+                            key={title}
+                            className={`${styles.accountChip} ${editForms[item.id].accountTitle === title ? styles.active : ''}`}
+                            onClick={() => setEditForms({
+                              ...editForms,
+                              [item.id]: { ...editForms[item.id], accountTitle: title }
+                            })}
+                          >
+                            {title}
+                          </button>
+                        ))}
+                      </div>
+                      <select
+                        value={editForms[item.id].accountTitle}
+                        onChange={(e) => {
+                          setEditForms({
+                            ...editForms,
+                            [item.id]: { ...editForms[item.id], accountTitle: e.target.value }
+                          });
+                        }}
+                        className={styles.otherSelect}
+                      >
+                        <option value="">選択してください</option>
+                        <optgroup label="よく使う科目">
+                          {majorAccountTitles.map(title => (
+                            <option key={title} value={title}>{title}</option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="その他">
+                          {otherAccountTitles.map(title => (
+                            <option key={title} value={title}>{title}</option>
+                          ))}
+                        </optgroup>
+                      </select>
+                    </div>
                   </div>
 
                   <div className={styles.formGroup}>

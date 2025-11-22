@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import styles from './Dashboard.module.css';
 
 import { useNavigate } from 'react-router-dom';
@@ -48,22 +48,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <div className={`${styles.iconBox} ${styles.iconFood}`}>
-              <DollarSign size={20} />
-            </div>
-            <span className={styles.statLabel}>食費</span>
-            <span className={styles.statValue}>¥45k</span>
-          </div>
-          <div className={styles.statCard}>
-            <div className={`${styles.iconBox} ${styles.iconTransport}`}>
-              <TrendingDown size={20} />
-            </div>
-            <span className={styles.statLabel}>交通費</span>
-            <span className={styles.statValue}>¥12k</span>
-          </div>
-        </div>
+
       </section>
 
       <section className={styles.recentSection}>

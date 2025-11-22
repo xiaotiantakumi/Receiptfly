@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sun, Moon, Monitor, Trash2, Download, Plus, X } from 'lucide-react';
+import { ArrowLeft, Sun, Moon, Monitor, Trash2, Download, Plus, X, Star } from 'lucide-react';
 import { useSettings } from '../../context/SettingsContext';
 import type { AccountTitle, Category } from '../../types/settings';
 import styles from './Settings.module.css';
@@ -32,6 +32,14 @@ export function Settings() {
       accountTitles: [...settings.accountTitles, newTitle]
     });
     setNewAccountTitle('');
+  };
+
+  const handleToggleFavoriteAccountTitle = (id: number) => {
+    updateSettings({
+      accountTitles: settings.accountTitles.map(t => 
+        t.id === id ? { ...t, isFavorite: !t.isFavorite } : t
+      )
+    });
   };
 
   const handleDeleteAccountTitle = (id: number) => {
@@ -148,7 +156,15 @@ export function Settings() {
           <div className={styles.listContainer}>
             {settings.accountTitles.map((title) => (
               <div key={title.id} className={styles.listItem}>
-                <span>{title.name}</span>
+                <div className={styles.listItemContent}>
+                  <button 
+                    onClick={() => handleToggleFavoriteAccountTitle(title.id)}
+                    className={`${styles.favoriteButton} ${title.isFavorite ? styles.active : ''}`}
+                  >
+                    <Star size={16} fill={title.isFavorite ? "currentColor" : "none"} />
+                  </button>
+                  <span>{title.name}</span>
+                </div>
                 {!title.isDefault && (
                   <button
                     onClick={() => handleDeleteAccountTitle(title.id)}
