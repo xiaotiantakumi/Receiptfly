@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiptfly.Application", "R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiptfly.Infrastructure", "Receiptfly.Infrastructure\Receiptfly.Infrastructure.csproj", "{482EF91B-32A6-426C-AE07-5CDB8195CD84}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiptfly.Api.Tests", "Receiptfly.Api.Tests\Receiptfly.Api.Tests.csproj", "{53B57B92-A1C0-41F1-80FB-D971CBED67B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{482EF91B-32A6-426C-AE07-5CDB8195CD84}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{482EF91B-32A6-426C-AE07-5CDB8195CD84}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{482EF91B-32A6-426C-AE07-5CDB8195CD84}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53B57B92-A1C0-41F1-80FB-D971CBED67B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53B57B92-A1C0-41F1-80FB-D971CBED67B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53B57B92-A1C0-41F1-80FB-D971CBED67B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53B57B92-A1C0-41F1-80FB-D971CBED67B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
