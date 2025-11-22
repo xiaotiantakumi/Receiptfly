@@ -1,9 +1,28 @@
 using Microsoft.EntityFrameworkCore;
 using Receiptfly.Application.Interfaces;
+using Receiptfly.Application.Services;
 using Receiptfly.Infrastructure.Data;
+using Receiptfly.Infrastructure.Services;
 using Receiptfly.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// OCR Service - Google Cloud認証情報の設定（非同期処理のため先に設定）
+var apiKey = builder.Configuration["GoogleCloud:ApiKey"] 
+    ?? Environment.GetEnvironmentVariable("GOOGLE_CLOUD_API_KEY");
+var credentialsPath = builder.Configuration["GoogleCloud:CredentialsPath"] 
+    ?? Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+
+// APIキーがファイルパスの場合、ファイルから読み込む
+if (!string.IsNullOrEmpty(apiKey) && File.Exists(apiKey))
+{
+    apiKey = File.ReadAllText(apiKey).Trim();
+}
+
+if (!string.IsNullOrEmpty(credentialsPath) && File.Exists(credentialsPath))
+{
+    Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialsPath);
+}
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -22,6 +41,26 @@ builder.Services.AddScoped<IApplicationDbContext>(provider =>
 builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssembly(typeof(Receiptfly.Application.Queries.GetReceipts.GetReceiptsQuery).Assembly);
 });
+
+// Image Storage Service
+builder.Services.AddScoped<IImageStorageService>(provider =>
+{
+    var environment = provider.GetRequiredService<IWebHostEnvironment>();
+    var uploadsDirectory = Path.Combine(environment.ContentRootPath, "uploads");
+    return new LocalFileStorageService(uploadsDirectory);
+});
+
+// OCR Service
+// 本番環境ではGoogleVisionOcrServiceを使用し、テスト環境ではMockGoogleVisionOcrServiceを使用
+if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("UseMockOcr", false))
+{
+    builder.Services.AddScoped<IOcrService, MockGoogleVisionOcrService>();
+}
+else
+{
+    // APIキーまたはサービスアカウントキーを使用
+    builder.Services.AddScoped<IOcrService>(provider => new GoogleVisionOcrService(apiKey));
+}
 
 // CORS
 builder.Services.AddCors(options =>
@@ -48,6 +87,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.MapControllers();
+
+// Create uploads directory if it doesn't exist
+var uploadsDirectory = Path.Combine(app.Environment.ContentRootPath, "uploads");
+if (!Directory.Exists(uploadsDirectory))
+{
+    Directory.CreateDirectory(uploadsDirectory);
+}
 
 // Apply Migrations
 using (var scope = app.Services.CreateScope())
@@ -163,3 +209,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+// Make Program class accessible for testing
+public partial class Program { }
