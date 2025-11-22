@@ -42,7 +42,7 @@ public class CreateReceiptCommandHandler : IRequestHandler<CreateReceiptCommand,
             }).ToList()
         };
 
-        receipt.Total = receipt.Items.Sum(i => i.Amount);
+        receipt.RecalculateTotal();
 
         await _repository.AddAsync(receipt, cancellationToken);
 

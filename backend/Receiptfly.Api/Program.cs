@@ -159,9 +159,20 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        if (builder.Environment.IsDevelopment())
+        {
+            // In development, allow any origin (for ngrok, local dev, etc.)
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            // In production, restrict to specific origins
+            policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
     });
 });
 

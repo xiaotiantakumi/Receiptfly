@@ -13,4 +13,12 @@ public class Receipt
     public string? CreditAccount { get; set; }
     
     public ICollection<TransactionItem> Items { get; set; } = new List<TransactionItem>();
+
+    /// <summary>
+    /// Recalculates the total amount from all items
+    /// </summary>
+    public void RecalculateTotal()
+    {
+        Total = Items.Sum(item => item.Amount);
+    }
 }

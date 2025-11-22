@@ -48,6 +48,8 @@ public class ReceiptsController : ControllerBase
         var command = new UpdateTransactionItemCommand(
             id,
             itemId,
+            request.Name,
+            request.Amount,
             request.IsTaxReturn,
             request.Category,
             request.AiCategory,
@@ -271,6 +273,8 @@ public class ReceiptsController : ControllerBase
 
     public class UpdateItemRequest
     {
+        public string? Name { get; set; }
+        public int? Amount { get; set; }
         public bool? IsTaxReturn { get; set; }
         public string? Category { get; set; }
         public string? AiCategory { get; set; }

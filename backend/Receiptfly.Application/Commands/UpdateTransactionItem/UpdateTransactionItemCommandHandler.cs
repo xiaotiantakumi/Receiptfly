@@ -28,6 +28,8 @@ public class UpdateTransactionItemCommandHandler : IRequestHandler<UpdateTransac
             return false;
         }
 
+        if (request.Name != null) item.Name = request.Name;
+        if (request.Amount.HasValue) item.Amount = request.Amount.Value;
         if (request.IsTaxReturn.HasValue) item.IsTaxReturn = request.IsTaxReturn.Value;
         if (request.Category != null) item.Category = request.Category;
         if (request.AiCategory != null) item.AiCategory = request.AiCategory;
@@ -35,6 +37,9 @@ public class UpdateTransactionItemCommandHandler : IRequestHandler<UpdateTransac
         if (request.Memo != null) item.Memo = request.Memo;
         if (request.TaxType != null) item.TaxType = request.TaxType;
         if (request.AccountTitle != null) item.AccountTitle = request.AccountTitle;
+
+        // Recalculate total to maintain consistency
+        receipt.RecalculateTotal();
 
         await _repository.UpdateAsync(receipt, cancellationToken);
 
