@@ -3,6 +3,7 @@ import { Layout } from './components/Layout/Layout';
 import { Dashboard } from './pages/Dashboard/Dashboard';
 import { Scan } from './pages/Scan/Scan';
 import { ReceiptDetail } from './pages/ReceiptDetail/ReceiptDetail';
+import Analytics from './pages/Analytics/Analytics';
 
 import { ReceiptProvider } from './context/ReceiptContext';
 
@@ -13,8 +14,9 @@ function App() {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
-            <Route path="receipts/:id" element={<ReceiptDetail />} />
             <Route path="scan" element={<Scan />} />
+            <Route path="receipts/:id" element={<ReceiptDetail />} />
+            <Route path="analytics" element={<Analytics />} />
             <Route path="settings" element={<div style={{padding: '2rem'}}>Settings (Coming Soon)</div>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
