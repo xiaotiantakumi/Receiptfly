@@ -1,0 +1,92 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: hsl(var(--bg-app));
+}
+
+.main {
+  flex: 1;
+  padding-bottom: 80px; /* Space for bottom nav */
+  overflow-y: auto;
+}
+
+.nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: rgba(var(--bg-card), 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid hsl(var(--text-muted) / 0.1);
+  z-index: 100;
+}
+
+.navContent {
+  max-width: 600px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 var(--space-md);
+}
+
+.navItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: hsl(var(--text-muted));
+  transition: color var(--transition-fast);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+}
+
+.navItem:active {
+  transform: scale(0.95);
+}
+
+.active {
+  color: hsl(var(--color-primary));
+}
+
+.navLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Special Scan Button Style */
+.scanButton {
+  position: relative;
+  top: -20px;
+}
+
+.scanIconWrapper {
+  background: linear-gradient(135deg, hsl(var(--color-primary)), hsl(var(--color-secondary)));
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: var(--shadow-glow);
+  transition: transform var(--transition-fast);
+}
+
+.scanButton.active .scanIconWrapper {
+  box-shadow: 0 0 30px -5px hsl(var(--color-primary) / 0.6);
+}
+
+.scanButton:active .scanIconWrapper {
+  transform: scale(0.9);
+}
+
+.scanButton .navLabel {
+  margin-top: 4px;
+  color: hsl(var(--text-primary));
+}

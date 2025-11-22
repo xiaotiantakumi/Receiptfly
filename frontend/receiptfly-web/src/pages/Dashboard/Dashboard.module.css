@@ -1,0 +1,267 @@
+.container {
+  padding: var(--space-lg) var(--space-md);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xl);
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(to right, hsl(var(--text-primary)), hsl(var(--text-secondary)));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+  color: hsl(var(--text-muted));
+  font-size: 0.9rem;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: hsl(var(--bg-card-hover));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  border: 1px solid hsl(var(--text-muted) / 0.2);
+}
+
+/* Summary Section */
+.summarySection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.mainCard {
+  background: linear-gradient(135deg, hsl(var(--color-primary) / 0.1), hsl(var(--color-secondary) / 0.1));
+  border: 1px solid hsl(var(--color-primary) / 0.2);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  position: relative;
+  overflow: hidden;
+}
+
+.cardRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.taxTotalBlock {
+  text-align: right;
+}
+
+.amountWrapperSmall {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+}
+
+.currencySmall {
+  font-size: 1rem;
+  color: hsl(var(--text-secondary));
+  margin-right: 2px;
+}
+
+.amountSmall {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: hsl(var(--color-secondary));
+}
+
+.mainCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--color-primary) / 0.5), transparent);
+}
+
+.cardLabel {
+  color: hsl(var(--text-muted));
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.amountWrapper {
+  margin: var(--space-sm) 0;
+  display: flex;
+  align-items: baseline;
+}
+
+.currency {
+  font-size: 1.5rem;
+  color: hsl(var(--text-secondary));
+  margin-right: 4px;
+}
+
+.amount {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: hsl(var(--text-primary));
+}
+
+.trend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: hsl(var(--color-warning)); /* Using warning for 'up' in spending context usually bad, but keeping simple */
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.statCard {
+  background: hsl(var(--bg-card));
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid hsl(var(--text-muted) / 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.iconBox {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconFood { background: hsl(var(--color-primary) / 0.2); color: hsl(var(--color-primary)); }
+.iconTransport { background: hsl(var(--color-secondary) / 0.2); color: hsl(var(--color-secondary)); }
+
+.statLabel {
+  font-size: 0.8rem;
+  color: hsl(var(--text-muted));
+}
+
+.statValue {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* Recent Transactions */
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.sectionTitle {
+  font-size: 1.1rem;
+  color: hsl(var(--text-primary));
+  margin: 0;
+}
+
+.filterButton {
+  font-size: 0.8rem;
+  color: hsl(var(--color-primary));
+  background: hsl(var(--color-primary) / 0.1);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-weight: 500;
+}
+
+.transactionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.transactionItem {
+  display: flex;
+  align-items: center;
+  padding: var(--space-md);
+  background: hsl(var(--bg-card));
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+  gap: var(--space-md);
+  cursor: pointer;
+}
+
+.transactionItem:hover {
+  background: hsl(var(--bg-card-hover));
+  border-color: hsl(var(--text-muted) / 0.1);
+  transform: translateY(-1px);
+}
+
+.transactionIcon {
+  width: 40px;
+  height: 40px;
+  background: hsl(var(--bg-app));
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.transactionInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemName {
+  font-weight: 500;
+  color: hsl(var(--text-primary));
+}
+
+.itemMeta {
+  font-size: 0.75rem;
+  color: hsl(var(--text-muted));
+}
+
+.amountColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.transactionAmount {
+  font-weight: 600;
+  color: hsl(var(--text-primary));
+}
+
+.taxReturnAmount {
+  font-size: 0.75rem;
+  color: hsl(var(--color-secondary));
+  font-weight: 500;
+}
+
+.taxBadge {
+  font-size: 0.65rem;
+  background: hsl(var(--color-secondary) / 0.2);
+  color: hsl(var(--color-secondary));
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}

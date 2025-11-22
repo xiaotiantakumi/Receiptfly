@@ -1,0 +1,56 @@
+:root {
+  /* Brand Colors - Premium Indigo/Violet Palette */
+  --color-primary: 250 100% 65%; /* #7c5cff */
+  --color-primary-dark: 250 100% 55%;
+  --color-secondary: 320 100% 60%; /* Pink/Magenta accent */
+  
+  /* Backgrounds - Dark Mode First */
+  --bg-app: 240 10% 4%; /* Very dark grey/blue */
+  --bg-card: 240 10% 8%;
+  --bg-card-hover: 240 10% 12%;
+  
+  /* Text */
+  --text-primary: 0 0% 100%;
+  --text-secondary: 240 10% 70%;
+  --text-muted: 240 10% 50%;
+
+  /* Status */
+  --color-success: 150 100% 40%;
+  --color-warning: 35 100% 50%;
+  --color-danger: 350 80% 55%;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  /* Radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px -5px hsl(var(--color-primary) / 0.3);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-app: 240 10% 98%;
+    --bg-card: 0 0% 100%;
+    --bg-card-hover: 240 5% 96%;
+    
+    --text-primary: 240 10% 10%;
+    --text-secondary: 240 5% 35%;
+    --text-muted: 240 5% 60%;
+  }
+}
