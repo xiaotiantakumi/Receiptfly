@@ -24,6 +24,25 @@ if (!string.IsNullOrEmpty(credentialsPath) && File.Exists(credentialsPath))
     Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", credentialsPath);
 }
 
+// Gemini API認証情報の設定
+var geminiApiKeyFromConfig = builder.Configuration["Gemini:ApiKey"];
+var geminiApiKeyFromEnv = Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+var geminiApiKey = geminiApiKeyFromConfig ?? geminiApiKeyFromEnv;
+
+Console.WriteLine($"[Gemini API Key] Config value: {(string.IsNullOrEmpty(geminiApiKeyFromConfig) ? "Not set" : geminiApiKeyFromConfig.Substring(0, Math.Min(10, geminiApiKeyFromConfig.Length)) + "...")}");
+Console.WriteLine($"[Gemini API Key] Environment variable: {(string.IsNullOrEmpty(geminiApiKeyFromEnv) ? "Not set" : geminiApiKeyFromEnv.Substring(0, Math.Min(10, geminiApiKeyFromEnv.Length)) + "...")}");
+
+var geminiModelName = builder.Configuration["Gemini:ModelName"] 
+    ?? Environment.GetEnvironmentVariable("GEMINI_MODEL_NAME") 
+    ?? "gemini-flash-lite-latest";
+
+// Gemini APIキーがファイルパスの場合、ファイルから読み込む
+if (!string.IsNullOrEmpty(geminiApiKey) && File.Exists(geminiApiKey))
+{
+    geminiApiKey = File.ReadAllText(geminiApiKey).Trim();
+    Console.WriteLine($"[Gemini API Key] Loaded from file: {geminiApiKey.Substring(0, Math.Min(10, geminiApiKey.Length))}...");
+}
+
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -52,14 +71,57 @@ builder.Services.AddScoped<IImageStorageService>(provider =>
 
 // OCR Service
 // 本番環境ではGoogleVisionOcrServiceを使用し、テスト環境ではMockGoogleVisionOcrServiceを使用
-if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("UseMockOcr", false))
+var useMockOcr = builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("UseMockOcr", false);
+
+if (useMockOcr)
 {
+    Console.WriteLine("[OCR Service] Using MockGoogleVisionOcrService (UseMockOcr=true)");
     builder.Services.AddScoped<IOcrService, MockGoogleVisionOcrService>();
 }
 else
 {
+    Console.WriteLine("[OCR Service] Using GoogleVisionOcrService");
+    if (!string.IsNullOrEmpty(apiKey))
+    {
+        Console.WriteLine($"[OCR Service] Google Cloud API Key: {apiKey.Substring(0, Math.Min(3, apiKey.Length))}...");
+    }
     // APIキーまたはサービスアカウントキーを使用
     builder.Services.AddScoped<IOcrService>(provider => new GoogleVisionOcrService(apiKey));
+}
+
+// Receipt Generation Service
+// 開発環境でUseMockReceiptGenerationがtrueの場合はMockGeminiReceiptGenerationServiceを使用
+var useMockReceiptGeneration = builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("UseMockReceiptGeneration", false);
+
+if (useMockReceiptGeneration)
+{
+    Console.WriteLine("[Receipt Generation Service] Using MockGeminiReceiptGenerationService (UseMockReceiptGeneration=true)");
+    builder.Services.AddScoped<IReceiptGenerationService, MockGeminiReceiptGenerationService>();
+}
+else
+{
+    // Gemini APIキーが設定されている場合のみGeminiReceiptGenerationServiceを登録
+    if (!string.IsNullOrEmpty(geminiApiKey) && geminiApiKey != "your-gemini-api-key-here")
+    {
+        Console.WriteLine($"[Receipt Generation Service] Using GeminiReceiptGenerationService (Model: {geminiModelName})");
+        Console.WriteLine($"[Receipt Generation Service] Gemini API Key: {geminiApiKey.Substring(0, Math.Min(10, geminiApiKey.Length))}...");
+        builder.Services.AddScoped<IReceiptGenerationService>(provider => 
+            new GeminiReceiptGenerationService(geminiApiKey, geminiModelName));
+    }
+    else
+    {
+        Console.WriteLine("[Receipt Generation Service] Using MockGeminiReceiptGenerationService (Gemini API Key not configured)");
+        if (string.IsNullOrEmpty(geminiApiKey))
+        {
+            Console.WriteLine("[Receipt Generation Service] Warning: Gemini API Key is not set. Please configure it in appsettings.Development.json or set GEMINI_API_KEY environment variable.");
+        }
+        else if (geminiApiKey == "your-gemini-api-key-here")
+        {
+            Console.WriteLine("[Receipt Generation Service] Warning: Gemini API Key is set to placeholder value. Please set actual API key.");
+        }
+        // APIキーが設定されていない場合はMockを使用
+        builder.Services.AddScoped<IReceiptGenerationService, MockGeminiReceiptGenerationService>();
+    }
 }
 
 // CORS

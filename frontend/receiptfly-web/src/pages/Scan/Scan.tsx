@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Camera, Image as ImageIcon, X, Edit, Upload, Trash2, Loader2 } from 'lucide-react';
 import styles from './Scan.module.css';
 import { useNavigate } from 'react-router-dom';
+import { useSettings } from '../../context/SettingsContext';
+import { useReceipts } from '../../context/ReceiptContext';
 
 interface CapturedImage {
   id: string;
@@ -16,15 +18,27 @@ interface OcrResult {
   error?: string;
 }
 
+interface BatchReceiptResult {
+  fileName: string;
+  success: boolean;
+  receiptId?: string;
+  receipt?: any;
+  error?: string;
+}
+
 export function Scan() {
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { settings } = useSettings();
+  const { refreshReceipts } = useReceipts();
   const [capturedImages, setCapturedImages] = useState<CapturedImage[]>([]);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCreatingReceipts, setIsCreatingReceipts] = useState(false);
   const [ocrResults, setOcrResults] = useState<OcrResult[]>([]);
+  const [receiptResults, setReceiptResults] = useState<BatchReceiptResult[]>([]);
 
   // カメラの初期化
   useEffect(() => {
@@ -123,32 +137,138 @@ export function Scan() {
 
     setIsUploading(true);
     setOcrResults([]);
+    setReceiptResults([]);
 
     try {
+      // Step 1: OCR処理
       const formData = new FormData();
       capturedImages.forEach((image) => {
         formData.append('files', image.file);
       });
 
-      const response = await fetch('http://localhost:5159/api/ocr/batch', {
+      const ocrResponse = await fetch('http://localhost:5159/api/ocr/batch', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
+      if (!ocrResponse.ok) {
         throw new Error('OCR処理に失敗しました');
       }
 
-      const data = await response.json();
-      setOcrResults(data.results || []);
+      const ocrData = await ocrResponse.json();
+      const ocrResults = ocrData.results || [];
+      setOcrResults(ocrResults);
+
+      // OCRエラーがある場合は処理を中断
+      const ocrErrors = ocrResults.filter((r: OcrResult) => r.error || !r.text);
+      if (ocrErrors.length > 0) {
+        alert(`${ocrErrors.length}件の画像でOCR処理に失敗しました`);
+        setIsUploading(false);
+        return;
+      }
+
+      // Step 2: レシート作成処理
+      setIsUploading(false);
+      setIsCreatingReceipts(true);
+
+      const accountTitles = settings.accountTitles.map(t => t.name);
+      const categories = settings.categories.map(c => c.name);
+
+      const batchRequest = {
+        items: ocrResults.map((result: OcrResult) => ({
+          ocrText: result.text || '',
+          fileName: result.fileName,
+          filePath: result.filePath
+        })),
+        accountTitles,
+        categories
+      };
+
+      console.log('バッチリクエスト:', {
+        itemsCount: batchRequest.items.length,
+        accountTitlesCount: accountTitles.length,
+        categoriesCount: categories.length,
+        firstItemOcrTextLength: batchRequest.items[0]?.ocrText?.length || 0
+      });
+
+      const receiptResponse = await fetch('http://localhost:5159/api/receipts/batch-from-ocr', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(batchRequest),
+      });
+
+      if (!receiptResponse.ok) {
+        let errorMessage = `レシート作成に失敗しました (${receiptResponse.status})`;
+        try {
+          const errorData = await receiptResponse.json();
+          console.error('レシート作成エラー:', errorData);
+          if (errorData.errors) {
+            // ASP.NET Coreのバリデーションエラー
+            const errorDetails = Object.entries(errorData.errors)
+              .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+              .join('; ');
+            errorMessage = `バリデーションエラー: ${errorDetails}`;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (e) {
+          const errorText = await receiptResponse.text();
+          console.error('レシート作成エラー（JSON解析失敗）:', errorText);
+          errorMessage = `レシート作成に失敗しました: ${errorText.substring(0, 200)}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const receiptData = await receiptResponse.json();
+      console.log('レシート作成レスポンス:', receiptData);
+      const results = receiptData.results || [];
+      setReceiptResults(results);
       
-      // OCR結果をコンソールに出力（将来的にLLM処理に渡す）
-      console.log('OCR結果:', data.results);
+      // 結果をログに出力
+      console.log('レシート作成結果:', {
+        total: receiptData.total,
+        succeeded: receiptData.succeeded,
+        failed: receiptData.failed,
+        results: results
+      });
+
+      // 成功したレシートの数をカウント（レシートは既にデータベースに保存されている）
+      const successfulReceipts = results.filter((r: BatchReceiptResult) => r.success).length;
+
+      // 結果を表示
+      const succeeded = results.filter((r: BatchReceiptResult) => r.success).length;
+      const failed = results.filter((r: BatchReceiptResult) => !r.success).length;
+
+      // レシート一覧を再取得（ホーム画面に遷移する前に）
+      try {
+        await refreshReceipts();
+        console.log('レシート一覧を再取得しました');
+      } catch (refreshError) {
+        console.error('レシート一覧の再取得に失敗しました:', refreshError);
+      }
+
+      if (failed > 0) {
+        alert(`${succeeded}件のレシートを作成しました。${failed}件のレシート作成に失敗しました。`);
+      } else {
+        alert(`${succeeded}件のレシートを作成しました。`);
+      }
+
+      // 少し待ってからホーム画面に遷移（レシート一覧の更新を確実にするため）
+      setTimeout(() => {
+        navigate('/');
+      }, 100);
     } catch (error) {
       console.error('アップロードエラー:', error);
-      alert('画像のアップロードに失敗しました');
+      alert('画像のアップロードまたはレシート作成に失敗しました');
+      setIsUploading(false);
+      setIsCreatingReceipts(false);
     } finally {
       setIsUploading(false);
+      setIsCreatingReceipts(false);
     }
   };
 
@@ -244,17 +364,22 @@ export function Scan() {
             <button
               className={styles.uploadButton}
               onClick={handleBatchUpload}
-              disabled={isUploading}
+              disabled={isUploading || isCreatingReceipts}
             >
               {isUploading ? (
                 <>
                   <Loader2 size={18} className={styles.spinner} />
-                  処理中...
+                  OCR処理中...
+                </>
+              ) : isCreatingReceipts ? (
+                <>
+                  <Loader2 size={18} className={styles.spinner} />
+                  レシート作成中...
                 </>
               ) : (
                 <>
                   <Upload size={18} />
-                  一括アップロード ({capturedImages.length}枚)
+                  アップロード開始 ({capturedImages.length}枚)
                 </>
               )}
             </button>

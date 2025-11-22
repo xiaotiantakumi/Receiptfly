@@ -26,6 +26,7 @@ interface ReceiptContextType {
   updateItem: (receiptId: string, itemId: string, updates: Partial<TransactionItem>) => Promise<void>;
   updateReceipt: (receiptId: string, updates: Partial<Receipt>) => Promise<void>;
   createReceipt: (receipt: any) => Promise<Receipt | null>;
+  refreshReceipts: () => Promise<void>;
 }
 
 const ReceiptContext = createContext<ReceiptContextType | undefined>(undefined);
@@ -34,25 +35,26 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    const fetchReceipts = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch('http://localhost:5159/api/receipts');
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        const data = await res.json();
-        console.log('Fetched receipts:', data);
-        console.log('Receipts count:', data.length);
-        setReceipts(data || []);
-      } catch (err) {
-        console.error('Failed to fetch receipts:', err);
-        setReceipts([]);
-      } finally {
-        setLoading(false);
+  const fetchReceipts = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('http://localhost:5159/api/receipts');
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
       }
-    };
+      const data = await res.json();
+      console.log('Fetched receipts:', data);
+      console.log('Receipts count:', data.length);
+      setReceipts(data || []);
+    } catch (err) {
+      console.error('Failed to fetch receipts:', err);
+      setReceipts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchReceipts();
   }, []);
 
@@ -121,7 +123,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ReceiptContext.Provider value={{ receipts, loading, updateItem, updateReceipt, createReceipt }}>
+    <ReceiptContext.Provider value={{ receipts, loading, updateItem, updateReceipt, createReceipt, refreshReceipts: fetchReceipts }}>
       {children}
     </ReceiptContext.Provider>
   );

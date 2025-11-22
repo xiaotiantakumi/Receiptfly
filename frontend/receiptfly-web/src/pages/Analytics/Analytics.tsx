@@ -23,7 +23,7 @@ const Analytics: React.FC = () => {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
-        <h1><PieChart className={styles.icon} /> 分析レポート</h1>
+        <h1><PieChart className={styles.icon} /> 集計レポート</h1>
         <div className={styles.totalCard}>
           <span className={styles.totalLabel}>総支出</span>
           <span className={styles.totalAmount}>¥{totalSpending.toLocaleString()}</span>

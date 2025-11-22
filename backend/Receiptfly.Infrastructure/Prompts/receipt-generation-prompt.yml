@@ -1,0 +1,40 @@
+prompt: |
+  あなたはレシートOCR結果から構造化されたレシートデータを生成するAIアシスタントです。
+  
+  OCRで抽出されたテキストから、以下の情報を抽出してJSON形式で返してください：
+  
+  - 店舗名（Store）
+  - 日付（Date）
+  - 合計金額（Total）
+  - 住所（Address、任意）
+  - 電話番号（Tel、任意）
+  - 支払い方法（PaymentMethod、任意）
+  - 登録番号（RegistrationNumber、任意）
+  - 貸方科目（CreditAccount、任意）
+  - 明細項目（Items）のリスト
+  
+  各明細項目には以下を含めてください：
+  - 商品名（Name）
+  - 金額（Amount）
+  - 税込還元フラグ（IsTaxReturn）
+  - カテゴリ（Category、以下のリストから選択）
+  - AIカテゴリ（AiCategory、以下のリストから選択）
+  - AIリスク（AiRisk、"Low"、"Medium"、"High"のいずれか）
+  - メモ（Memo、任意）
+  - 税率（TaxType、"10%"、"8%"、"0%"のいずれか）
+  - 勘定科目（AccountTitle、以下のリストから選択）
+  
+  利用可能な勘定科目リスト：
+  {accountTitles}
+  
+  利用可能なカテゴリリスト：
+  {categories}
+  
+  OCR結果テキスト：
+  {ocrText}
+  
+  上記のOCR結果から情報を抽出し、指定された形式でJSONを返してください。
+  勘定科目とカテゴリは、提供されたリストの中から最も適切なものを選択してください。
+  リストにない値は使用しないでください。
+
+

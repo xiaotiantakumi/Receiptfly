@@ -112,6 +112,7 @@
 .recentScans {
   padding: 1.5rem;
   flex: 1;
+  background: hsl(var(--bg-primary, 0 0% 100%));
 }
 
 .recentHeader {
@@ -126,6 +127,11 @@
   font-weight: 600;
   color: hsl(var(--text-primary));
   margin: 0;
+}
+
+/* ライトモードでのテキストの可視性を確保 */
+[data-theme="light"] .recentTitle {
+  color: #1f2937; /* 濃いグレーで確実に見えるように */
 }
 
 .manualEntryButton {
@@ -223,22 +229,35 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: hsl(var(--color-primary));
+  background: #6366f1; /* より濃いインディゴ色で確実に見えるように */
   color: white;
-  border: none;
+  border: 2px solid #6366f1;
   border-radius: var(--radius-md);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px hsl(var(--color-primary) / 0.3);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4), 0 0 0 1px rgba(0, 0, 0, 0.1);
   width: 100%;
+  margin-top: 1rem;
+}
+
+/* ライトモードでのボタンの可視性を確保 */
+[data-theme="light"] .uploadButton {
+  background: #4f46e5; /* より濃い色 */
+  border-color: #4f46e5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.5), 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
 .uploadButton:hover:not(:disabled) {
-  background: hsl(var(--color-primary) / 0.9);
+  background: #4f46e5;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px hsl(var(--color-primary) / 0.4);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.5);
+}
+
+[data-theme="light"] .uploadButton:hover:not(:disabled) {
+  background: #4338ca;
+  box-shadow: 0 4px 12px rgba(67, 56, 202, 0.6);
 }
 
 .uploadButton:disabled {

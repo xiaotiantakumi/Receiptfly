@@ -21,7 +21,7 @@ export function Layout() {
           
           <NavLink to="/analytics" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>
             <PieChart size={24} />
-            <span className={styles.navLabel}>分析</span>
+            <span className={styles.navLabel}>集計</span>
           </NavLink>
 
           <NavLink 
