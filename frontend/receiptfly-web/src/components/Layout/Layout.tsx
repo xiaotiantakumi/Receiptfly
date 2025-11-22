@@ -26,11 +26,9 @@ export function Layout() {
 
           <NavLink 
             to="/scan" 
-            className={({ isActive }) => `${styles.navItem} ${styles.scanButton} ${isActive ? styles.active : ''}`}
+            className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}
           >
-            <div className={styles.scanIconWrapper}>
-              <Camera size={28} />
-            </div>
+            <Camera size={24} />
             <span className={styles.navLabel}>スキャン</span>
           </NavLink>
 

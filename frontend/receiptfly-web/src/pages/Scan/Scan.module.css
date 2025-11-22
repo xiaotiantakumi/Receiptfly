@@ -83,12 +83,14 @@
   width: 72px;
   height: 72px;
   border-radius: var(--radius-full);
-  border: 4px solid white;
+  border: 4px solid hsl(var(--color-primary));
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform var(--transition-fast);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
 }
 
 .shutterButton:active {
@@ -98,8 +100,9 @@
 .shutterInner {
   width: 100%;
   height: 100%;
-  background: white;
+  background: hsl(var(--color-primary));
   border-radius: var(--radius-full);
+  box-shadow: 0 0 20px hsl(var(--color-primary) / 0.5);
 }
 
 .spacer {
