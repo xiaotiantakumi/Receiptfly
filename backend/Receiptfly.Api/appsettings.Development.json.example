@@ -1,0 +1,14 @@
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "GoogleCloud": {
+    "ApiKey": "your-api-key-here",
+    "CredentialsPath": "path/to/your-service-account-key.json"
+  },
+  "UseMockOcr": false
+}
+

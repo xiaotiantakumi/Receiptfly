@@ -21,6 +21,9 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 
+# Uploaded images
+backend/Receiptfly.Api/uploads/
+
 # Frontend (Node.js)
 **/node_modules/
 **/dist/
@@ -33,6 +36,15 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Google Cloud credentials
+**/*-credentials.json
+**/*-key.json
+**/key.json
+**/google-credentials.json
+**/gcp-key.json
+**/service-account*.json
+
 # Documentation (private)
 /CLAUDE.md
 backend/onion_README.md
+backend/Receiptfly.Api/appsettings.Development.json
