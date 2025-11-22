@@ -27,7 +27,7 @@ public class ReceiptsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetReceipt(int id)
+    public async Task<IActionResult> GetReceipt(Guid id)
     {
         var receipt = await _mediator.Send(new GetReceiptByIdQuery(id));
 
@@ -40,7 +40,7 @@ public class ReceiptsController : ControllerBase
     }
 
     [HttpPut("{id}/items/{itemId}")]
-    public async Task<IActionResult> UpdateItem(int id, int itemId, [FromBody] UpdateItemRequest request)
+    public async Task<IActionResult> UpdateItem(Guid id, Guid itemId, [FromBody] UpdateItemRequest request)
     {
         var command = new UpdateTransactionItemCommand(
             id,
@@ -65,7 +65,7 @@ public class ReceiptsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateReceipt(int id, [FromBody] UpdateReceiptRequest request)
+    public async Task<IActionResult> UpdateReceipt(Guid id, [FromBody] UpdateReceiptRequest request)
     {
         var command = new UpdateReceiptCommand(
             id,

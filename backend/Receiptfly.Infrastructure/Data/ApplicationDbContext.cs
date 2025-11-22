@@ -21,6 +21,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<Receipt>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.Store).IsRequired();
             entity.Property(e => e.Date).IsRequired();
             
@@ -33,6 +34,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<TransactionItem>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.Name).IsRequired();
         });
     }

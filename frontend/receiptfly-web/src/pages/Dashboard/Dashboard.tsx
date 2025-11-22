@@ -6,13 +6,13 @@ import { useReceipts } from '../../context/ReceiptContext';
 
 export function Dashboard() {
   const navigate = useNavigate();
-  const { receipts } = useReceipts();
+  const { receipts, loading } = useReceipts();
 
   // Calculate monthly totals
-  const monthlyTotal = receipts.reduce((sum, r) => sum + r.total, 0);
-  const monthlyTaxReturnTotal = receipts.reduce((sum, r) => {
+  const monthlyTotal = receipts.length > 0 ? receipts.reduce((sum, r) => sum + r.total, 0) : 0;
+  const monthlyTaxReturnTotal = receipts.length > 0 ? receipts.reduce((sum, r) => {
     return sum + r.items.filter(i => i.isTaxReturn).reduce((subSum, i) => subSum + i.amount, 0);
-  }, 0);
+  }, 0) : 0;
 
   return (
     <div className={`${styles.container} animate-fade-in`}>
@@ -57,35 +57,41 @@ export function Dashboard() {
         </div>
         
         <div className={styles.transactionList}>
-          {receipts.map((receipt) => {
-            const taxReturnAmount = receipt.items
-              .filter(item => item.isTaxReturn)
-              .reduce((sum, item) => sum + item.amount, 0);
+          {loading ? (
+            <div>読み込み中...</div>
+          ) : receipts.length === 0 ? (
+            <div>レシートがありません</div>
+          ) : (
+            receipts.map((receipt) => {
+              const taxReturnAmount = receipt.items
+                .filter(item => item.isTaxReturn)
+                .reduce((sum, item) => sum + item.amount, 0);
 
-            return (
-              <div 
-                key={receipt.id} 
-                className={styles.transactionItem}
-                onClick={() => navigate(`/receipts/${receipt.id}`)}
-              >
-                <div className={styles.transactionIcon}>🧾</div>
-                
-                <div className={styles.transactionInfo}>
-                  <span className={styles.itemName}>{receipt.store}</span>
-                  <span className={styles.itemMeta}>{receipt.date} • {receipt.items.length}点</span>
+              return (
+                <div 
+                  key={receipt.id} 
+                  className={styles.transactionItem}
+                  onClick={() => navigate(`/receipts/${receipt.id}`)}
+                >
+                  <div className={styles.transactionIcon}>🧾</div>
+                  
+                  <div className={styles.transactionInfo}>
+                    <span className={styles.itemName}>{receipt.store}</span>
+                    <span className={styles.itemMeta}>{receipt.date} • {receipt.items.length}点</span>
+                  </div>
+                  
+                  <div className={styles.amountColumn}>
+                    <span className={styles.transactionAmount}>-¥{receipt.total.toLocaleString()}</span>
+                    {taxReturnAmount > 0 && (
+                      <span className={styles.taxReturnAmount}>
+                        (申告: ¥{taxReturnAmount.toLocaleString()})
+                      </span>
+                    )}
+                  </div>
                 </div>
-                
-                <div className={styles.amountColumn}>
-                  <span className={styles.transactionAmount}>-¥{receipt.total.toLocaleString()}</span>
-                  {taxReturnAmount > 0 && (
-                    <span className={styles.taxReturnAmount}>
-                      (申告: ¥{taxReturnAmount.toLocaleString()})
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </section>
     </div>

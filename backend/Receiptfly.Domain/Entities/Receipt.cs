@@ -2,7 +2,7 @@ namespace Receiptfly.Domain.Entities;
 
 public class Receipt
 {
-    public int Id { get; set; }
+    public Guid Id { get; set; }
     public required string Store { get; set; }
     public required string Date { get; set; }
     public int Total { get; set; }

@@ -1,5 +1,5 @@
 export interface TransactionItem {
-  id: number;
+  id: string;
   name: string;
   amount: number;
   isTaxReturn: boolean;
@@ -12,7 +12,7 @@ export interface TransactionItem {
 }
 
 export interface Receipt {
-  id: number;
+  id: string;
   store: string;
   date: string;
   total: number;
@@ -26,7 +26,7 @@ export interface Receipt {
 
 export const MOCK_RECEIPTS: Receipt[] = [
   {
-    id: 1,
+    id: '1',
     store: 'スーパーライフ',
     date: '2023年11月22日 10:23',
     total: 1340,
@@ -36,7 +36,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
     registrationNumber: 'T1234567890123',
     items: [
       { 
-        id: 101, 
+        id: '101', 
         name: 'コピー用紙 A4', 
         amount: 450, 
         isTaxReturn: true, 
@@ -46,7 +46,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
         memo: 'プリンター用'
       },
       { 
-        id: 102, 
+        id: '102', 
         name: '豚肉 300g', 
         amount: 890, 
         isTaxReturn: false, 
@@ -57,7 +57,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
     ]
   },
   {
-    id: 2,
+    id: '2',
     store: 'セブンイレブン',
     date: '2023年11月21日 18:45',
     total: 270,
@@ -67,7 +67,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
     registrationNumber: 'T9876543210987',
     items: [
       { 
-        id: 201, 
+        id: '201', 
         name: 'ボールペン', 
         amount: 120, 
         isTaxReturn: true, 
@@ -77,7 +77,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
         memo: 'クライアント訪問用'
       },
       { 
-        id: 202, 
+        id: '202', 
         name: 'おにぎり', 
         amount: 150, 
         isTaxReturn: false, 
@@ -88,7 +88,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
     ]
   },
   {
-    id: 3,
+    id: '3',
     store: 'ユニクロ',
     date: '2023年11月20日 14:30',
     total: 3990,
@@ -98,7 +98,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
     registrationNumber: 'T1122334455667',
     items: [
       { 
-        id: 301, 
+        id: '301', 
         name: 'ヒートテッククルーネックT', 
         amount: 1290, 
         isTaxReturn: false, 
@@ -108,7 +108,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
         memo: '私用？'
       },
       { 
-        id: 302, 
+        id: '302', 
         name: 'ヒートテックタイツ', 
         amount: 1290, 
         isTaxReturn: false, 
@@ -117,7 +117,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
         aiRisk: 'Medium'
       },
       { 
-        id: 303, 
+        id: '303', 
         name: '3足組ソックス', 
         amount: 990, 
         isTaxReturn: false, 
@@ -126,7 +126,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
         aiRisk: 'Low'
       },
       { 
-        id: 304, 
+        id: '304', 
         name: 'ショッピングバッグ', 
         amount: 420, 
         isTaxReturn: true, 
@@ -138,7 +138,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
     ]
   },
   {
-    id: 4,
+    id: '4',
     store: 'タクシー（日本交通）',
     date: '2023年11月19日 23:15',
     total: 4500,
@@ -148,7 +148,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
     registrationNumber: 'T5566778899001',
     items: [
       { 
-        id: 401, 
+        id: '401', 
         name: '乗車料金', 
         amount: 4500, 
         isTaxReturn: true, 
@@ -160,7 +160,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
     ]
   },
   {
-    id: 5,
+    id: '5',
     store: '居酒屋 魚金',
     date: '2023年11月18日 20:00',
     total: 12000,
@@ -170,7 +170,7 @@ export const MOCK_RECEIPTS: Receipt[] = [
     registrationNumber: 'T9988776655443',
     items: [
       { 
-        id: 501, 
+        id: '501', 
         name: '飲食代', 
         amount: 12000, 
         isTaxReturn: true, 

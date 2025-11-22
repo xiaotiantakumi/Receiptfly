@@ -12,7 +12,7 @@ builder.Services.AddSwaggerGen();
 
 // Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite("Data Source=receiptfly.db"));
+    options.UseSqlite("Data Source=receiptfly.db", b => b.MigrationsAssembly("Receiptfly.Infrastructure")));
 
 // Register IApplicationDbContext
 builder.Services.AddScoped<IApplicationDbContext>(provider => 
@@ -28,7 +28,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5174")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -37,29 +37,33 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+// CORS must be before other middleware
+app.UseCors("AllowFrontend");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowFrontend");
-
 app.UseHttpsRedirection();
 app.MapControllers();
 
-// Seed Data
+// Apply Migrations
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    // For now, use EnsureCreated to create the database schema
+    // TODO: Fix migration discovery and use Migrate() instead
     db.Database.EnsureCreated();
 
     if (!db.Receipts.Any())
     {
-        db.Receipts.AddRange(new[]
+        var receipts = new List<Receipt>
         {
             new Receipt
             {
+                Id = Guid.NewGuid(),
                 Store = "スーパーライフ",
                 Date = "2023年11月22日 10:23",
                 Total = 1340,
@@ -70,12 +74,13 @@ using (var scope = app.Services.CreateScope())
                 RegistrationNumber = "T1234567890123",
                 Items = new List<TransactionItem>
                 {
-                    new() { Name = "コピー用紙 A4", Amount = 450, IsTaxReturn = true, Category = "消耗品費", AiCategory = "消耗品費", AiRisk = "Low", Memo = "プリンター用", TaxType = "10%", AccountTitle = "消耗品費" },
-                    new() { Name = "豚肉 300g", Amount = 890, IsTaxReturn = false, Category = "食費", AiCategory = "食費", AiRisk = "Low", TaxType = "8%", AccountTitle = "福利厚生費" }
+                    new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "コピー用紙 A4", Amount = 450, IsTaxReturn = true, Category = "消耗品費", AiCategory = "消耗品費", AiRisk = "Low", Memo = "プリンター用", TaxType = "10%", AccountTitle = "消耗品費" },
+                    new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "豚肉 300g", Amount = 890, IsTaxReturn = false, Category = "食費", AiCategory = "食費", AiRisk = "Low", TaxType = "8%", AccountTitle = "福利厚生費" }
                 }
             },
             new Receipt
             {
+                Id = Guid.NewGuid(),
                 Store = "セブンイレブン",
                 Date = "2023年11月21日 18:45",
                 Total = 270,
@@ -86,12 +91,13 @@ using (var scope = app.Services.CreateScope())
                 RegistrationNumber = "T9876543210987",
                 Items = new List<TransactionItem>
                 {
-                    new() { Name = "ボールペン", Amount = 120, IsTaxReturn = true, Category = "消耗品費", AiCategory = "事務用品費", AiRisk = "Low", Memo = "クライアント訪問用", TaxType = "10%", AccountTitle = "消耗品費" },
-                    new() { Name = "おにぎり", Amount = 150, IsTaxReturn = false, Category = "食費", AiCategory = "食費", AiRisk = "Low", TaxType = "8%", AccountTitle = "会議費" }
+                    new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "ボールペン", Amount = 120, IsTaxReturn = true, Category = "消耗品費", AiCategory = "事務用品費", AiRisk = "Low", Memo = "クライアント訪問用", TaxType = "10%", AccountTitle = "消耗品費" },
+                    new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "おにぎり", Amount = 150, IsTaxReturn = false, Category = "食費", AiCategory = "食費", AiRisk = "Low", TaxType = "8%", AccountTitle = "会議費" }
                 }
             },
             new Receipt
             {
+                Id = Guid.NewGuid(),
                 Store = "ユニクロ",
                 Date = "2023年11月20日 14:30",
                 Total = 3990,
@@ -102,14 +108,15 @@ using (var scope = app.Services.CreateScope())
                 RegistrationNumber = "T1122334455667",
                 Items = new List<TransactionItem>
                 {
-                    new() { Name = "ヒートテッククルーネックT", Amount = 1290, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Medium", Memo = "私用？", TaxType = "10%", AccountTitle = "事業主貸" },
-                    new() { Name = "ヒートテックタイツ", Amount = 1290, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Medium", TaxType = "10%", AccountTitle = "事業主貸" },
-                    new() { Name = "3足組ソックス", Amount = 990, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Low", TaxType = "10%", AccountTitle = "事業主貸" },
-                    new() { Name = "ショッピングバッグ", Amount = 420, IsTaxReturn = true, Category = "雑費", AiCategory = "消耗品費", AiRisk = "Low", Memo = "資料持ち運び用", TaxType = "10%", AccountTitle = "消耗品費" }
+                    new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "ヒートテッククルーネックT", Amount = 1290, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Medium", Memo = "私用？", TaxType = "10%", AccountTitle = "事業主貸" },
+                    new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "ヒートテックタイツ", Amount = 1290, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Medium", TaxType = "10%", AccountTitle = "事業主貸" },
+                    new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "3足組ソックス", Amount = 990, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Low", TaxType = "10%", AccountTitle = "事業主貸" },
+                    new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "ショッピングバッグ", Amount = 420, IsTaxReturn = true, Category = "雑費", AiCategory = "消耗品費", AiRisk = "Low", Memo = "資料持ち運び用", TaxType = "10%", AccountTitle = "消耗品費" }
                 }
             },
             new Receipt
             {
+                Id = Guid.NewGuid(),
                 Store = "タクシー（日本交通）",
                 Date = "2023年11月19日 23:15",
                 Total = 4500,
@@ -120,11 +127,12 @@ using (var scope = app.Services.CreateScope())
                 RegistrationNumber = "T5566778899001",
                 Items = new List<TransactionItem>
                 {
-                    new() { Name = "乗車料金", Amount = 4500, IsTaxReturn = true, Category = "旅費交通費", AiCategory = "旅費交通費", AiRisk = "Medium", Memo = "深夜帰宅（プロジェクト遅延対応）", TaxType = "10%", AccountTitle = "旅費交通費" }
+                    new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "乗車料金", Amount = 4500, IsTaxReturn = true, Category = "旅費交通費", AiCategory = "旅費交通費", AiRisk = "Medium", Memo = "深夜帰宅（プロジェクト遅延対応）", TaxType = "10%", AccountTitle = "旅費交通費" }
                 }
             },
             new Receipt
             {
+                Id = Guid.NewGuid(),
                 Store = "居酒屋 魚金",
                 Date = "2023年11月18日 20:00",
                 Total = 12000,
@@ -135,10 +143,21 @@ using (var scope = app.Services.CreateScope())
                 RegistrationNumber = "T9988776655443",
                 Items = new List<TransactionItem>
                 {
-                    new() { Name = "飲食代", Amount = 12000, IsTaxReturn = true, Category = "交際費", AiCategory = "接待交際費", AiRisk = "High", Memo = "取引先（株式会社A）との会食", TaxType = "10%", AccountTitle = "接待交際費" }
+                    new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "飲食代", Amount = 12000, IsTaxReturn = true, Category = "交際費", AiCategory = "接待交際費", AiRisk = "High", Memo = "取引先（株式会社A）との会食", TaxType = "10%", AccountTitle = "接待交際費" }
                 }
             }
-        });
+        };
+
+        // Set ReceiptId for all items
+        foreach (var receipt in receipts)
+        {
+            foreach (var item in receipt.Items)
+            {
+                item.ReceiptId = receipt.Id;
+            }
+        }
+
+        db.Receipts.AddRange(receipts);
         db.SaveChanges();
     }
 }

@@ -7,7 +7,7 @@ import { type Receipt } from '../data/mockData';
 // Example: type TransactionItem = { id: number; isTaxReturn: boolean; category: string; aiCategory: string; aiRisk: string; memo: string; taxType: string; accountTitle: string; /* other properties */ };
 
 interface TransactionItem {
-  id: number;
+  id: string;
   isTaxReturn: boolean;
   category: string;
   aiCategory: string;
@@ -23,8 +23,8 @@ interface TransactionItem {
 interface ReceiptContextType {
   receipts: Receipt[];
   loading: boolean;
-  updateItem: (receiptId: number, itemId: number, updates: Partial<TransactionItem>) => Promise<void>;
-  updateReceipt: (receiptId: number, updates: Partial<Receipt>) => Promise<void>;
+  updateItem: (receiptId: string, itemId: string, updates: Partial<TransactionItem>) => Promise<void>;
+  updateReceipt: (receiptId: string, updates: Partial<Receipt>) => Promise<void>;
   createReceipt: (receipt: any) => Promise<Receipt | null>;
 }
 
@@ -39,10 +39,16 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
         const res = await fetch('http://localhost:5159/api/receipts');
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
         const data = await res.json();
-        setReceipts(data);
+        console.log('Fetched receipts:', data);
+        console.log('Receipts count:', data.length);
+        setReceipts(data || []);
       } catch (err) {
         console.error('Failed to fetch receipts:', err);
+        setReceipts([]);
       } finally {
         setLoading(false);
       }
@@ -50,7 +56,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     fetchReceipts();
   }, []);
 
-  const updateItem = async (receiptId: number, itemId: number, updates: Partial<TransactionItem>) => {
+  const updateItem = async (receiptId: string, itemId: string, updates: Partial<TransactionItem>) => {
     try {
       // Optimistic update
       setReceipts(prevReceipts =>
@@ -75,7 +81,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateReceipt = async (receiptId: number, updates: Partial<Receipt>) => {
+  const updateReceipt = async (receiptId: string, updates: Partial<Receipt>) => {
     try {
       setReceipts(prevReceipts =>
         prevReceipts.map(r =>

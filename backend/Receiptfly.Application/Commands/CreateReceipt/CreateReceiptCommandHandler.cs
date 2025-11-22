@@ -15,8 +15,10 @@ public class CreateReceiptCommandHandler : IRequestHandler<CreateReceiptCommand,
 
     public async Task<Receipt> Handle(CreateReceiptCommand request, CancellationToken cancellationToken)
     {
+        var receiptId = Guid.NewGuid();
         var receipt = new Receipt
         {
+            Id = receiptId,
             Store = request.Store,
             Date = request.Date,
             Address = request.Address,
@@ -26,6 +28,8 @@ public class CreateReceiptCommandHandler : IRequestHandler<CreateReceiptCommand,
             CreditAccount = request.CreditAccount,
             Items = request.Items.Select(item => new TransactionItem
             {
+                Id = Guid.NewGuid(),
+                ReceiptId = receiptId,
                 Name = item.Name,
                 Amount = item.Amount,
                 IsTaxReturn = item.IsTaxReturn ?? false,
