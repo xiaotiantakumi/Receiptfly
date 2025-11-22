@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Receiptfly.Api.Data;
-using Receiptfly.Api.Models;
+using Receiptfly.Application.Interfaces;
+using Receiptfly.Infrastructure.Data;
+using Receiptfly.Domain.Entities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,8 +11,17 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Database
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite("Data Source=receiptfly.db"));
+
+// Register IApplicationDbContext
+builder.Services.AddScoped<IApplicationDbContext>(provider => 
+    provider.GetRequiredService<ApplicationDbContext>());
+
+// MediatR
+builder.Services.AddMediatR(cfg => {
+    cfg.RegisterServicesFromAssembly(typeof(Receiptfly.Application.Queries.GetReceipts.GetReceiptsQuery).Assembly);
+});
 
 // CORS
 builder.Services.AddCors(options =>
@@ -41,7 +51,7 @@ app.MapControllers();
 // Seed Data
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     db.Database.EnsureCreated();
 
     if (!db.Receipts.Any())

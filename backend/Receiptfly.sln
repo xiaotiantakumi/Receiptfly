@@ -5,6 +5,12 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiptfly.Api", "Receiptfly.Api\Receiptfly.Api.csproj", "{2FE249D9-B1DC-4314-893E-617EA656FBEC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiptfly.Domain", "Receiptfly.Domain\Receiptfly.Domain.csproj", "{7699A5E2-EF5A-4FBC-9070-1FC264801672}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiptfly.Application", "Receiptfly.Application\Receiptfly.Application.csproj", "{84F8E01A-51FC-4CA7-ABE6-64BBC96B8112}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiptfly.Infrastructure", "Receiptfly.Infrastructure\Receiptfly.Infrastructure.csproj", "{482EF91B-32A6-426C-AE07-5CDB8195CD84}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +24,17 @@ Global
 		{2FE249D9-B1DC-4314-893E-617EA656FBEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2FE249D9-B1DC-4314-893E-617EA656FBEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2FE249D9-B1DC-4314-893E-617EA656FBEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7699A5E2-EF5A-4FBC-9070-1FC264801672}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7699A5E2-EF5A-4FBC-9070-1FC264801672}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7699A5E2-EF5A-4FBC-9070-1FC264801672}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7699A5E2-EF5A-4FBC-9070-1FC264801672}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84F8E01A-51FC-4CA7-ABE6-64BBC96B8112}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84F8E01A-51FC-4CA7-ABE6-64BBC96B8112}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84F8E01A-51FC-4CA7-ABE6-64BBC96B8112}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84F8E01A-51FC-4CA7-ABE6-64BBC96B8112}.Release|Any CPU.Build.0 = Release|Any CPU
+		{482EF91B-32A6-426C-AE07-5CDB8195CD84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{482EF91B-32A6-426C-AE07-5CDB8195CD84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{482EF91B-32A6-426C-AE07-5CDB8195CD84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{482EF91B-32A6-426C-AE07-5CDB8195CD84}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,7 +1,10 @@
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Receiptfly.Api.Data;
-using Receiptfly.Api.Models;
+using Receiptfly.Application.Commands.CreateReceipt;
+using Receiptfly.Application.Commands.UpdateReceipt;
+using Receiptfly.Application.Commands.UpdateTransactionItem;
+using Receiptfly.Application.Queries.GetReceiptById;
+using Receiptfly.Application.Queries.GetReceipts;
 
 namespace Receiptfly.Api.Controllers;
 
@@ -9,57 +12,54 @@ namespace Receiptfly.Api.Controllers;
 [Route("api/[controller]")]
 public class ReceiptsController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IMediator _mediator;
 
-    public ReceiptsController(AppDbContext context)
+    public ReceiptsController(IMediator mediator)
     {
-        _context = context;
+        _mediator = mediator;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Receipt>>> GetReceipts()
+    public async Task<IActionResult> GetReceipts()
     {
-        return await _context.Receipts.Include(r => r.Items).ToListAsync();
+        var receipts = await _mediator.Send(new GetReceiptsQuery());
+        return Ok(receipts);
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<Receipt>> GetReceipt(int id)
+    public async Task<IActionResult> GetReceipt(int id)
     {
-        var receipt = await _context.Receipts.Include(r => r.Items).FirstOrDefaultAsync(r => r.Id == id);
+        var receipt = await _mediator.Send(new GetReceiptByIdQuery(id));
 
         if (receipt == null)
         {
             return NotFound();
         }
 
-        return receipt;
+        return Ok(receipt);
     }
 
     [HttpPut("{id}/items/{itemId}")]
     public async Task<IActionResult> UpdateItem(int id, int itemId, [FromBody] UpdateItemRequest request)
     {
-        var item = await _context.TransactionItems.FindAsync(itemId);
+        var command = new UpdateTransactionItemCommand(
+            id,
+            itemId,
+            request.IsTaxReturn,
+            request.Category,
+            request.AiCategory,
+            request.AiRisk,
+            request.Memo,
+            request.TaxType,
+            request.AccountTitle
+        );
 
-        if (item == null)
+        var result = await _mediator.Send(command);
+
+        if (!result)
         {
             return NotFound();
         }
-
-        if (item.ReceiptId != id)
-        {
-            return BadRequest("Item does not belong to the specified receipt.");
-        }
-
-        // Update fields if provided
-        if (request.IsTaxReturn.HasValue) item.IsTaxReturn = request.IsTaxReturn.Value;
-        if (request.Category != null) item.Category = request.Category;
-        if (request.AiCategory != null) item.AiCategory = request.AiCategory;
-        if (request.AiRisk != null) item.AiRisk = request.AiRisk;
-        if (request.Memo != null) item.Memo = request.Memo;
-        if (request.TaxType != null) item.TaxType = request.TaxType;
-        if (request.AccountTitle != null) item.AccountTitle = request.AccountTitle;
-
-        await _context.SaveChangesAsync();
 
         return NoContent();
     }
@@ -67,22 +67,23 @@ public class ReceiptsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateReceipt(int id, [FromBody] UpdateReceiptRequest request)
     {
-        var receipt = await _context.Receipts.FindAsync(id);
+        var command = new UpdateReceiptCommand(
+            id,
+            request.Store,
+            request.Date,
+            request.Address,
+            request.Tel,
+            request.PaymentMethod,
+            request.RegistrationNumber,
+            request.CreditAccount
+        );
 
-        if (receipt == null)
+        var result = await _mediator.Send(command);
+
+        if (!result)
         {
             return NotFound();
         }
-
-        if (request.Store != null) receipt.Store = request.Store;
-        if (request.Date != null) receipt.Date = request.Date;
-        if (request.Address != null) receipt.Address = request.Address;
-        if (request.Tel != null) receipt.Tel = request.Tel;
-        if (request.PaymentMethod != null) receipt.PaymentMethod = request.PaymentMethod;
-        if (request.RegistrationNumber != null) receipt.RegistrationNumber = request.RegistrationNumber;
-        if (request.CreditAccount != null) receipt.CreditAccount = request.CreditAccount;
-
-        await _context.SaveChangesAsync();
 
         return NoContent();
     }
@@ -90,33 +91,28 @@ public class ReceiptsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateReceipt([FromBody] CreateReceiptRequest request)
     {
-        var receipt = new Receipt
-        {
-            Store = request.Store,
-            Date = request.Date,
-            Address = request.Address,
-            Tel = request.Tel,
-            PaymentMethod = request.PaymentMethod,
-            RegistrationNumber = request.RegistrationNumber,
-            CreditAccount = request.CreditAccount,
-            Items = request.Items.Select(item => new TransactionItem
-            {
-                Name = item.Name,
-                Amount = item.Amount,
-                IsTaxReturn = item.IsTaxReturn ?? false,
-                Category = item.Category,
-                AiCategory = item.AiCategory,
-                AiRisk = item.AiRisk ?? "Low",
-                Memo = item.Memo,
-                TaxType = item.TaxType,
-                AccountTitle = item.AccountTitle
-            }).ToList()
-        };
+        var command = new CreateReceiptCommand(
+            request.Store,
+            request.Date,
+            request.Tel,
+            request.PaymentMethod,
+            request.Address,
+            request.RegistrationNumber,
+            request.CreditAccount,
+            request.Items.Select(item => new CreateReceiptItemDto(
+                item.Name,
+                item.Amount,
+                item.IsTaxReturn,
+                item.Category,
+                item.AiCategory,
+                item.AiRisk,
+                item.Memo,
+                item.TaxType,
+                item.AccountTitle
+            )).ToList()
+        );
 
-        receipt.Total = receipt.Items.Sum(i => i.Amount);
-
-        _context.Receipts.Add(receipt);
-        await _context.SaveChangesAsync();
+        var receipt = await _mediator.Send(command);
 
         return CreatedAtAction(nameof(GetReceipt), new { id = receipt.Id }, receipt);
     }
