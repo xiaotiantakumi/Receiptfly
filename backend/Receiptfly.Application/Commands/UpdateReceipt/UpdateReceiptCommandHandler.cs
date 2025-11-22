@@ -5,16 +5,16 @@ namespace Receiptfly.Application.Commands.UpdateReceipt;
 
 public class UpdateReceiptCommandHandler : IRequestHandler<UpdateReceiptCommand, bool>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IReceiptRepository _repository;
 
-    public UpdateReceiptCommandHandler(IApplicationDbContext context)
+    public UpdateReceiptCommandHandler(IReceiptRepository repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
     public async Task<bool> Handle(UpdateReceiptCommand request, CancellationToken cancellationToken)
     {
-        var receipt = await _context.Receipts.FindAsync(new object[] { request.Id }, cancellationToken);
+        var receipt = await _repository.GetByIdAsync(request.Id, cancellationToken);
 
         if (receipt == null)
         {
@@ -29,7 +29,7 @@ public class UpdateReceiptCommandHandler : IRequestHandler<UpdateReceiptCommand,
         if (request.RegistrationNumber != null) receipt.RegistrationNumber = request.RegistrationNumber;
         if (request.CreditAccount != null) receipt.CreditAccount = request.CreditAccount;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _repository.UpdateAsync(receipt, cancellationToken);
 
         return true;
     }

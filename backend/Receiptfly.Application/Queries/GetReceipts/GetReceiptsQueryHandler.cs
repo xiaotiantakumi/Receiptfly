@@ -7,17 +7,16 @@ namespace Receiptfly.Application.Queries.GetReceipts;
 
 public class GetReceiptsQueryHandler : IRequestHandler<GetReceiptsQuery, List<Receipt>>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IReceiptRepository _repository;
 
-    public GetReceiptsQueryHandler(IApplicationDbContext context)
+    public GetReceiptsQueryHandler(IReceiptRepository repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
     public async Task<List<Receipt>> Handle(GetReceiptsQuery request, CancellationToken cancellationToken)
     {
-        return await _context.Receipts
-            .Include(r => r.Items)
-            .ToListAsync(cancellationToken);
+        var receipts = await _repository.GetAllAsync(cancellationToken);
+        return receipts.ToList();
     }
 }

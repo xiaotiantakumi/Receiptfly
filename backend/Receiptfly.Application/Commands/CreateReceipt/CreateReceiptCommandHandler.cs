@@ -6,11 +6,11 @@ namespace Receiptfly.Application.Commands.CreateReceipt;
 
 public class CreateReceiptCommandHandler : IRequestHandler<CreateReceiptCommand, Receipt>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IReceiptRepository _repository;
 
-    public CreateReceiptCommandHandler(IApplicationDbContext context)
+    public CreateReceiptCommandHandler(IReceiptRepository repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
     public async Task<Receipt> Handle(CreateReceiptCommand request, CancellationToken cancellationToken)
@@ -44,8 +44,7 @@ public class CreateReceiptCommandHandler : IRequestHandler<CreateReceiptCommand,
 
         receipt.Total = receipt.Items.Sum(i => i.Amount);
 
-        _context.Receipts.Add(receipt);
-        await _context.SaveChangesAsync(cancellationToken);
+        await _repository.AddAsync(receipt, cancellationToken);
 
         return receipt;
     }

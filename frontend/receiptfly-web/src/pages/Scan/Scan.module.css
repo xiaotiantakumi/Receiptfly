@@ -139,7 +139,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1.2rem;
-  background: hsl(var(--color-primary));
+  background: #6366f1;
   color: white;
   border: none;
   border-radius: 8px;
@@ -147,13 +147,23 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 2px 8px hsl(var(--color-primary) / 0.3);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="light"] .manualEntryButton {
+  background: #4f46e5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
 }
 
 .manualEntryButton:hover {
-  background: hsl(var(--color-primary) / 0.9);
+  background: #4f46e5;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px hsl(var(--color-primary) / 0.4);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+}
+
+[data-theme="light"] .manualEntryButton:hover {
+  background: #4338ca;
+  box-shadow: 0 4px 12px rgba(67, 56, 202, 0.5);
 }
 
 .manualEntryButton:active {

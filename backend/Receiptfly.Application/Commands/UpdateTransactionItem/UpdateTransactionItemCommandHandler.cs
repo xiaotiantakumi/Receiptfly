@@ -5,18 +5,25 @@ namespace Receiptfly.Application.Commands.UpdateTransactionItem;
 
 public class UpdateTransactionItemCommandHandler : IRequestHandler<UpdateTransactionItemCommand, bool>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IReceiptRepository _repository;
 
-    public UpdateTransactionItemCommandHandler(IApplicationDbContext context)
+    public UpdateTransactionItemCommandHandler(IReceiptRepository repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
     public async Task<bool> Handle(UpdateTransactionItemCommand request, CancellationToken cancellationToken)
     {
-        var item = await _context.TransactionItems.FindAsync(new object[] { request.ItemId }, cancellationToken);
+        var receipt = await _repository.GetByIdAsync(request.ReceiptId, cancellationToken);
 
-        if (item == null || item.ReceiptId != request.ReceiptId)
+        if (receipt == null)
+        {
+            return false;
+        }
+
+        var item = receipt.Items.FirstOrDefault(i => i.Id == request.ItemId);
+
+        if (item == null)
         {
             return false;
         }
@@ -29,7 +36,7 @@ public class UpdateTransactionItemCommandHandler : IRequestHandler<UpdateTransac
         if (request.TaxType != null) item.TaxType = request.TaxType;
         if (request.AccountTitle != null) item.AccountTitle = request.AccountTitle;
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _repository.UpdateAsync(receipt, cancellationToken);
 
         return true;
     }

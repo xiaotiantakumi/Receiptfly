@@ -35,10 +35,9 @@ export GOOGLE_CLOUD_API_KEY="hogehoge"
 ### バックエンドの起動
 
 ```bash
+lsof -ti :5159 | xargs kill -9 2>/dev/null || true
 cd backend
 dotnet restore Receiptfly.sln
-# ポート5159が使用中の場合は既存のプロセスを停止
-lsof -ti :5159 | xargs kill -9 2>/dev/null || true
 dotnet run --project Receiptfly.Api/Receiptfly.Api.csproj
 ```
 

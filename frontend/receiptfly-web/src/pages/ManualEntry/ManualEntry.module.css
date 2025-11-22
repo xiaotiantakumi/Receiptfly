@@ -86,9 +86,12 @@
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
   font-size: 1rem;
-  background: hsl(var(--bg));
+  background: hsl(var(--bg-app));
   color: hsl(var(--text-primary));
   transition: all 0.2s;
+  -webkit-text-fill-color: hsl(var(--text-primary));
+  -webkit-opacity: 1;
+  opacity: 1;
 }
 
 .formGroup input:focus,
@@ -163,8 +166,11 @@
   border: 1px solid hsl(var(--border));
   border-radius: 6px;
   font-size: 0.95rem;
-  background: hsl(var(--card-bg));
+  background: hsl(var(--bg-app));
   color: hsl(var(--text-primary));
+  -webkit-text-fill-color: hsl(var(--text-primary));
+  -webkit-opacity: 1;
+  opacity: 1;
 }
 
 .itemName {
