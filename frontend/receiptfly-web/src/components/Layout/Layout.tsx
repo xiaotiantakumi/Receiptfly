@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, ScanLine, Settings } from 'lucide-react';
+import { Home, Camera, Settings, PieChart } from 'lucide-react';
 import styles from './Layout.module.css';
 
 export function Layout() {
@@ -15,16 +15,21 @@ export function Layout() {
             to="/" 
             className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}
           >
-            <LayoutDashboard size={24} />
-            <span className={styles.navLabel}>ダッシュボード</span>
+            <Home size={24} />
+            <span className={styles.navLabel}>ホーム</span>
           </NavLink>
           
+          <NavLink to="/analytics" className={({ isActive }) => `${styles.navItem} ${isActive ? styles.active : ''}`}>
+            <PieChart size={24} />
+            <span className={styles.navLabel}>分析</span>
+          </NavLink>
+
           <NavLink 
             to="/scan" 
             className={({ isActive }) => `${styles.navItem} ${styles.scanButton} ${isActive ? styles.active : ''}`}
           >
             <div className={styles.scanIconWrapper}>
-              <ScanLine size={28} />
+              <Camera size={28} />
             </div>
             <span className={styles.navLabel}>スキャン</span>
           </NavLink>
