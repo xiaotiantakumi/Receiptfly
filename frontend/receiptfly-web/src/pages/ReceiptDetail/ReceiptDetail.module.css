@@ -555,9 +555,9 @@
 }
 
 .accountChip.active {
-  background: hsl(var(--color-primary));
-  color: white;
-  border-color: hsl(var(--color-primary));
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
 }
 
 .otherSelect {
@@ -573,4 +573,102 @@
 .otherSelect:focus {
   outline: none;
   border-color: hsl(var(--color-primary));
+}
+
+/* Journal Entry Styles */
+.journalSection {
+  margin-bottom: var(--space-lg);
+  background: hsl(var(--bg-app));
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid hsl(var(--border));
+}
+
+.journalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.journalHeader label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: hsl(var(--text-secondary));
+}
+
+.addJournalRowButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: hsl(var(--color-primary));
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s;
+}
+
+.addJournalRowButton:hover {
+  background: hsl(var(--color-primary) / 0.1);
+}
+
+.journalRow {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: flex-end;
+  margin-bottom: var(--space-sm);
+}
+
+.journalRow:last-child {
+  margin-bottom: 0;
+}
+
+.journalAccount {
+  flex: 2;
+}
+
+.journalAmount {
+  flex: 1;
+}
+
+.journalSelect {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-sm);
+  background: hsl(var(--bg-card));
+  color: hsl(var(--text-primary));
+  font-size: 0.9rem;
+}
+
+.journalAmount input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-sm);
+  background: hsl(var(--bg-card));
+  color: hsl(var(--text-primary));
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.removeJournalRowButton {
+  background: none;
+  border: none;
+  color: hsl(var(--text-muted));
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.removeJournalRowButton:hover {
+  color: var(--color-danger);
+  background: hsl(var(--color-danger) / 0.1);
 }

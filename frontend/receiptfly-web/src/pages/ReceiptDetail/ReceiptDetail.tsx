@@ -1,4 +1,4 @@
-import { ArrowLeft, Store, Edit2, X } from 'lucide-react';
+import { ArrowLeft, Edit2, Store, Plus, Trash2 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './ReceiptDetail.module.css';
 import { useReceipts } from '../../context/ReceiptContext';
@@ -23,20 +23,32 @@ export function ReceiptDetail() {
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(t => t.name);
 
+  const majorCategories = settings.categories
+    .filter(c => c.isFavorite)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(c => c.name);
+
+  const otherCategories = settings.categories
+    .filter(c => !c.isFavorite)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map(c => c.name);
+
   // State to hold form data for each expanded item, keyed by item ID
   const [isEditingReceipt, setIsEditingReceipt] = useState(false);
   const [receiptEditForm, setReceiptEditForm] = useState({ store: '', date: '', tel: '' });
   // New state to track which items are expanded for inline editing (supports multiple)
   const [expandedItemIds, setExpandedItemIds] = useState<number[]>([]);
+  
   // State to hold form data for each expanded item, keyed by item ID
   const [editForms, setEditForms] = useState<Record<number, {
+    name: string;
+    debits: { accountTitle: string; amount: number }[];
+    credits: { accountTitle: string; amount: number }[];
     aiCategory: string;
     aiRisk: string;
     memo: string;
     taxType: string;
-    accountTitle: string;
     isTaxReturn: boolean;
-    amount: number;
   }>>({});
   
   const receipt = receipts.find(r => r.id === Number(id));
@@ -44,10 +56,6 @@ export function ReceiptDetail() {
   if (!receipt) {
     return <div className={styles.container}>Receipt not found</div>;
   }
-
-  const toggleTaxReturn = (itemId: number, currentStatus: boolean) => {
-    updateItem(receipt.id, itemId, { isTaxReturn: !currentStatus });
-  };
 
   const toggleEditItem = (item: TransactionItem) => {
     setExpandedItemIds(prev => {
@@ -67,13 +75,14 @@ export function ReceiptDetail() {
         setEditForms(forms => ({
           ...forms,
           [item.id]: {
+            name: item.name,
+            debits: [{ accountTitle: item.accountTitle || '', amount: item.amount }],
+            credits: [{ accountTitle: '現金', amount: item.amount }], // Default to Cash
             aiCategory: item.aiCategory || '',
             aiRisk: item.aiRisk || 'Low',
             memo: item.memo || '',
             taxType: item.taxType || '10%',
-            accountTitle: item.accountTitle || '',
-            isTaxReturn: item.isTaxReturn,
-            amount: item.amount
+            isTaxReturn: item.isTaxReturn
           }
         }));
         return [...prev, item.id];
@@ -114,22 +123,95 @@ export function ReceiptDetail() {
   const handleSaveEdit = (itemId: number) => {
     const form = editForms[itemId];
     if (form) {
+      const debitTotal = form.debits.reduce((sum, d) => sum + d.amount, 0);
+      const creditTotal = form.credits.reduce((sum, c) => sum + c.amount, 0);
+
+      if (debitTotal !== creditTotal) {
+        alert(`借方合計(${debitTotal})と貸方合計(${creditTotal})が一致していません。`);
+        return;
+      }
+
       updateItem(receipt.id, itemId, {
+        name: form.name,
+        amount: debitTotal,
+        accountTitle: form.debits[0]?.accountTitle || '', // Use first debit as main title
         aiCategory: form.aiCategory,
         aiRisk: form.aiRisk,
         memo: form.memo,
         taxType: form.taxType,
-        accountTitle: form.accountTitle,
-        isTaxReturn: form.isTaxReturn,
-        amount: Number(form.amount)
+        isTaxReturn: form.isTaxReturn
       });
       handleCancelEdit(itemId); // Close and cleanup
     }
   };
 
+  const addDebitRow = (itemId: number) => {
+    setEditForms(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        debits: [...prev[itemId].debits, { accountTitle: '', amount: 0 }]
+      }
+    }));
+  };
+
+  const removeDebitRow = (itemId: number, index: number) => {
+    setEditForms(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        debits: prev[itemId].debits.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const updateDebitRow = (itemId: number, index: number, field: 'accountTitle' | 'amount', value: any) => {
+    setEditForms(prev => {
+      const newDebits = [...prev[itemId].debits];
+      newDebits[index] = { ...newDebits[index], [field]: value };
+      return {
+        ...prev,
+        [itemId]: { ...prev[itemId], debits: newDebits }
+      };
+    });
+  };
+
+  const addCreditRow = (itemId: number) => {
+    setEditForms(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        credits: [...prev[itemId].credits, { accountTitle: '', amount: 0 }]
+      }
+    }));
+  };
+
+  const removeCreditRow = (itemId: number, index: number) => {
+    setEditForms(prev => ({
+      ...prev,
+      [itemId]: {
+        ...prev[itemId],
+        credits: prev[itemId].credits.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
+  const updateCreditRow = (itemId: number, index: number, field: 'accountTitle' | 'amount', value: any) => {
+    setEditForms(prev => {
+      const newCredits = [...prev[itemId].credits];
+      newCredits[index] = { ...newCredits[index], [field]: value };
+      return {
+        ...prev,
+        [itemId]: { ...prev[itemId], credits: newCredits }
+      };
+    });
+  };
+
   const taxReturnTotal = receipt.items
     .filter(item => item.isTaxReturn)
     .reduce((sum, item) => sum + item.amount, 0);
+
+  const COMMON_CREDIT_TITLES = ["現金", "クレジットカード", "普通預金", "事業主借"];
 
   return (
     <div className={`${styles.container} animate-slide-in`}>
@@ -216,30 +298,151 @@ export function ReceiptDetail() {
               {/* Inline Edit Form */}
               {expandedItemIds.includes(item.id) && editForms[item.id] && (
                 <div className={styles.inlineEdit}>
+                  
+                  {/* Item Name */}
                   <div className={styles.formGroup}>
-                    <label>金額</label>
+                    <label>項目名</label>
                     <input
-                      type="number"
-                      value={editForms[item.id].amount}
+                      type="text"
+                      value={editForms[item.id].name}
                       onChange={(e) => setEditForms({
                         ...editForms,
-                        [item.id]: { ...editForms[item.id], amount: Number(e.target.value) }
+                        [item.id]: { ...editForms[item.id], name: e.target.value }
                       })}
-                      onWheel={(e) => e.currentTarget.blur()}
-                      placeholder="金額"
+                      placeholder="項目名"
                     />
                   </div>
 
+                  {/* Debit Section */}
+                  <div className={styles.journalSection}>
+                    <div className={styles.journalHeader}>
+                      <label>借方 (Debit)</label>
+                      <button onClick={() => addDebitRow(item.id)} className={styles.addJournalRowButton}>
+                        <Plus size={14} /> 行追加
+                      </button>
+                    </div>
+                    {editForms[item.id].debits.map((debit, index) => (
+                      <div key={`debit-${index}`} className={styles.journalRow}>
+                        <div className={styles.journalAccount}>
+                          <div className={styles.accountTitleSelector}>
+                            <div className={styles.quickSelect}>
+                              {majorAccountTitles.map(title => (
+                                <button
+                                  key={title}
+                                  className={`${styles.accountChip} ${debit.accountTitle === title ? styles.active : ''}`}
+                                  onClick={() => updateDebitRow(item.id, index, 'accountTitle', title)}
+                                >
+                                  {title}
+                                </button>
+                              ))}
+                            </div>
+                            <select
+                              value={debit.accountTitle}
+                              onChange={(e) => updateDebitRow(item.id, index, 'accountTitle', e.target.value)}
+                              className={styles.journalSelect}
+                            >
+                              <option value="">勘定科目を選択</option>
+                              <optgroup label="よく使う科目">
+                                {majorAccountTitles.map(title => (
+                                  <option key={title} value={title}>{title}</option>
+                                ))}
+                              </optgroup>
+                              <optgroup label="その他">
+                                {otherAccountTitles.map(title => (
+                                  <option key={title} value={title}>{title}</option>
+                                ))}
+                              </optgroup>
+                            </select>
+                          </div>
+                        </div>
+                        <div className={styles.journalAmount}>
+                          <input
+                            type="number"
+                            value={debit.amount}
+                            onChange={(e) => updateDebitRow(item.id, index, 'amount', Number(e.target.value))}
+                            onWheel={(e) => e.currentTarget.blur()}
+                            placeholder="金額"
+                          />
+                        </div>
+                        {editForms[item.id].debits.length > 1 && (
+                          <button onClick={() => removeDebitRow(item.id, index)} className={styles.removeJournalRowButton}>
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Credit Section */}
+                  <div className={styles.journalSection}>
+                    <div className={styles.journalHeader}>
+                      <label>貸方 (Credit)</label>
+                      <button onClick={() => addCreditRow(item.id)} className={styles.addJournalRowButton}>
+                        <Plus size={14} /> 行追加
+                      </button>
+                    </div>
+                    {editForms[item.id].credits.map((credit, index) => (
+                      <div key={`credit-${index}`} className={styles.journalRow}>
+                        <div className={styles.journalAccount}>
+                          <div className={styles.accountTitleSelector}>
+                            <div className={styles.quickSelect}>
+                              {COMMON_CREDIT_TITLES.map(title => (
+                                <button
+                                  key={title}
+                                  className={`${styles.accountChip} ${credit.accountTitle === title ? styles.active : ''}`}
+                                  onClick={() => updateCreditRow(item.id, index, 'accountTitle', title)}
+                                >
+                                  {title}
+                                </button>
+                              ))}
+                            </div>
+                            <select
+                              value={credit.accountTitle}
+                              onChange={(e) => updateCreditRow(item.id, index, 'accountTitle', e.target.value)}
+                              className={styles.journalSelect}
+                            >
+                              <option value="">勘定科目を選択</option>
+                              <optgroup label="資産・負債">
+                                {COMMON_CREDIT_TITLES.map(title => (
+                                  <option key={title} value={title}>{title}</option>
+                                ))}
+                              </optgroup>
+                              <optgroup label="すべての勘定科目">
+                                {settings.accountTitles.map(t => (
+                                  <option key={t.id} value={t.name}>{t.name}</option>
+                                ))}
+                              </optgroup>
+                            </select>
+                          </div>
+                        </div>
+                        <div className={styles.journalAmount}>
+                          <input
+                            type="number"
+                            value={credit.amount}
+                            onChange={(e) => updateCreditRow(item.id, index, 'amount', Number(e.target.value))}
+                            onWheel={(e) => e.currentTarget.blur()}
+                            placeholder="金額"
+                          />
+                        </div>
+                        {editForms[item.id].credits.length > 1 && (
+                          <button onClick={() => removeCreditRow(item.id, index)} className={styles.removeJournalRowButton}>
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
                   <div className={styles.formGroup}>
-                    <label>AIカテゴリ</label>
-                    <input
-                      type="text"
-                      value={editForms[item.id].aiCategory}
+                    <label>メモ</label>
+                    <textarea
+                      value={editForms[item.id].memo}
                       onChange={(e) => setEditForms({
                         ...editForms,
-                        [item.id]: { ...editForms[item.id], aiCategory: e.target.value }
+                        [item.id]: { ...editForms[item.id], memo: e.target.value }
                       })}
-                      placeholder="例: 事務用品費"
+                      placeholder="メモを入力"
+                      rows={2}
                     />
                   </div>
 
@@ -258,6 +461,49 @@ export function ReceiptDetail() {
                     </select>
                   </div>
 
+                  {/* Category (Moved to bottom) */}
+                  <div className={styles.formGroup}>
+                    <label>カテゴリ</label>
+                    <div className={styles.accountTitleSelector}>
+                      <div className={styles.quickSelect}>
+                        {majorCategories.map(cat => (
+                          <button
+                            key={cat}
+                            className={`${styles.accountChip} ${editForms[item.id].aiCategory === cat ? styles.active : ''}`}
+                            onClick={() => setEditForms({
+                              ...editForms,
+                              [item.id]: { ...editForms[item.id], aiCategory: cat }
+                            })}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                      <select
+                        value={editForms[item.id].aiCategory}
+                        onChange={(e) => {
+                          setEditForms({
+                            ...editForms,
+                            [item.id]: { ...editForms[item.id], aiCategory: e.target.value }
+                          });
+                        }}
+                        className={styles.otherSelect}
+                      >
+                        <option value="">選択してください</option>
+                        <optgroup label="よく使うカテゴリ">
+                          {majorCategories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="その他">
+                          {otherCategories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </optgroup>
+                      </select>
+                    </div>
+                  </div>
+
                   <div className={styles.formGroup}>
                     <label>税区分</label>
                     <select
@@ -272,62 +518,7 @@ export function ReceiptDetail() {
                       <option value="0%">0%</option>
                     </select>
                   </div>
-
-                  <div className={styles.formGroup}>
-                    <label>勘定科目</label>
-                    <div className={styles.accountTitleSelector}>
-                      <div className={styles.quickSelect}>
-                        {majorAccountTitles.map(title => (
-                          <button
-                            key={title}
-                            className={`${styles.accountChip} ${editForms[item.id].accountTitle === title ? styles.active : ''}`}
-                            onClick={() => setEditForms({
-                              ...editForms,
-                              [item.id]: { ...editForms[item.id], accountTitle: title }
-                            })}
-                          >
-                            {title}
-                          </button>
-                        ))}
-                      </div>
-                      <select
-                        value={editForms[item.id].accountTitle}
-                        onChange={(e) => {
-                          setEditForms({
-                            ...editForms,
-                            [item.id]: { ...editForms[item.id], accountTitle: e.target.value }
-                          });
-                        }}
-                        className={styles.otherSelect}
-                      >
-                        <option value="">選択してください</option>
-                        <optgroup label="よく使う科目">
-                          {majorAccountTitles.map(title => (
-                            <option key={title} value={title}>{title}</option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="その他">
-                          {otherAccountTitles.map(title => (
-                            <option key={title} value={title}>{title}</option>
-                          ))}
-                        </optgroup>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label>メモ</label>
-                    <textarea
-                      value={editForms[item.id].memo}
-                      onChange={(e) => setEditForms({
-                        ...editForms,
-                        [item.id]: { ...editForms[item.id], memo: e.target.value }
-                      })}
-                      placeholder="メモを入力"
-                      rows={2}
-                    />
-                  </div>
-
+                  
                   <div className={styles.formGroup}>
                     <label className={styles.checkboxLabel}>
                       <input
@@ -343,11 +534,21 @@ export function ReceiptDetail() {
                   </div>
 
                   <div className={styles.inlineEditActions}>
-                    <button className={styles.saveButton} onClick={() => handleSaveEdit(item.id)}>
-                      保存する
-                    </button>
-                    <button className={styles.cancelButton} onClick={() => handleCancelEdit(item.id)}>
+                    <button 
+                      className={styles.cancelButton}
+                      onClick={() => handleCancelEdit(item.id)}
+                    >
                       キャンセル
+                    </button>
+                    <button 
+                      className={styles.saveButton}
+                      onClick={() => handleSaveEdit(item.id)}
+                      disabled={
+                        editForms[item.id].debits.reduce((sum, d) => sum + d.amount, 0) !== 
+                        editForms[item.id].credits.reduce((sum, c) => sum + c.amount, 0)
+                      }
+                    >
+                      保存
                     </button>
                   </div>
                 </div>

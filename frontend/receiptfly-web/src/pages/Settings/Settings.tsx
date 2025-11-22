@@ -55,6 +55,7 @@ export function Settings() {
       id: Math.max(...settings.categories.map(c => c.id), 0) + 1,
       name: newCategory.trim(),
       isDefault: false,
+      isFavorite: false,
       sortOrder: settings.categories.length + 1,
     };
     
@@ -62,6 +63,14 @@ export function Settings() {
       categories: [...settings.categories, newCat]
     });
     setNewCategory('');
+  };
+
+  const handleToggleFavoriteCategory = (id: number) => {
+    updateSettings({
+      categories: settings.categories.map(c => 
+        c.id === id ? { ...c, isFavorite: !c.isFavorite } : c
+      )
+    });
   };
 
   const handleDeleteCategory = (id: number) => {
@@ -196,7 +205,15 @@ export function Settings() {
           <div className={styles.listContainer}>
             {settings.categories.map((category) => (
               <div key={category.id} className={styles.listItem}>
-                <span>{category.name}</span>
+                <div className={styles.listItemContent}>
+                  <button 
+                    onClick={() => handleToggleFavoriteCategory(category.id)}
+                    className={`${styles.favoriteButton} ${category.isFavorite ? styles.active : ''}`}
+                  >
+                    <Star size={16} fill={category.isFavorite ? "currentColor" : "none"} />
+                  </button>
+                  <span>{category.name}</span>
+                </div>
                 {!category.isDefault && (
                   <button
                     onClick={() => handleDeleteCategory(category.id)}

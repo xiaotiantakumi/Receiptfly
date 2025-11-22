@@ -16,6 +16,7 @@ interface TransactionItem {
   taxType: string;
   accountTitle: string;
   amount: number;
+  name: string;
   // Add any other properties that a TransactionItem might have
 }
 
