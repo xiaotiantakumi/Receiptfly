@@ -3,8 +3,8 @@ using MediatR;
 namespace Receiptfly.Application.Commands.UpdateTransactionItem;
 
 public record UpdateTransactionItemCommand(
-    Guid ReceiptId,
-    Guid ItemId,
+    string ReceiptId,
+    string ItemId,
     string? Name,
     int? Amount,
     bool? IsTaxReturn,

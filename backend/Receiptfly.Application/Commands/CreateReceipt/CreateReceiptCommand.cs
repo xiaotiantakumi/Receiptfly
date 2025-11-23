@@ -11,7 +11,8 @@ public record CreateReceiptCommand(
     string? Address,
     string? RegistrationNumber,
     string? CreditAccount,
-    List<CreateReceiptItemDto> Items
+    List<CreateReceiptItemDto> Items,
+    string? OriginalFileName = null
 ) : IRequest<Receipt>;
 
 public record CreateReceiptItemDto(

@@ -3,4 +3,4 @@ using Receiptfly.Domain.Entities;
 
 namespace Receiptfly.Application.Queries.GetReceiptById;
 
-public record GetReceiptByIdQuery(Guid Id) : IRequest<Receipt?>;
+public record GetReceiptByIdQuery(string Id) : IRequest<Receipt?>;
