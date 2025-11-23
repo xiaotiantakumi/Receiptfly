@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Camera, Image as ImageIcon, X, Edit, Upload, Trash2, Loader2 } from 'lucide-react';
+import { Camera, Image as ImageIcon, X, Edit, Upload, Trash2, Loader2, FileText } from 'lucide-react';
 import styles from './Scan.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../../context/SettingsContext';
@@ -105,7 +105,7 @@ export function Scan() {
 
     const newImages: CapturedImage[] = [];
     Array.from(files).forEach((file) => {
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith('image/') || file.type === 'application/pdf') {
         const preview = URL.createObjectURL(file);
         newImages.push({
           id: Date.now().toString() + Math.random(),
@@ -146,7 +146,7 @@ export function Scan() {
         formData.append('files', image.file);
       });
 
-      const ocrResponse = await fetch('http://localhost:5159/api/ocr/batch', {
+      const ocrResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/ocr/batch`, {
         method: 'POST',
         body: formData,
       });
@@ -236,8 +236,6 @@ export function Scan() {
         results: results
       });
 
-      // 成功したレシートの数をカウント（レシートは既にデータベースに保存されている）
-      const successfulReceipts = results.filter((r: BatchReceiptResult) => r.success).length;
 
       // 結果を表示
       const succeeded = results.filter((r: BatchReceiptResult) => r.success).length;
@@ -325,7 +323,7 @@ export function Scan() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.pdf"
           multiple
           onChange={handleFileSelect}
           style={{ display: 'none' }}
@@ -351,7 +349,14 @@ export function Scan() {
             <div className={styles.imageGrid}>
               {capturedImages.map((image) => (
                 <div key={image.id} className={styles.imagePreview}>
-                  <img src={image.preview} alt="Preview" />
+                  {image.file.type === 'application/pdf' ? (
+                    <div className={styles.pdfPreview}>
+                      <FileText size={48} />
+                      <span className={styles.pdfName}>{image.file.name}</span>
+                    </div>
+                  ) : (
+                    <img src={image.preview} alt="Preview" />
+                  )}
                   <button
                     className={styles.removeButton}
                     onClick={() => removeImage(image.id)}

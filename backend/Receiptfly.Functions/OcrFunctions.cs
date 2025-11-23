@@ -5,6 +5,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Receiptfly.Application.Services;
 using Azure.Storage.Blobs;
+using PDFtoImage;
+using SkiaSharp;
 
 namespace Receiptfly.Functions
 {
@@ -48,38 +50,67 @@ namespace Receiptfly.Functions
 
             try
             {
-                // 画像を保存
-                var filePath = await _imageStorageService.SaveImageAsync(file.OpenReadStream(), file.FileName, CancellationToken.None);
+                Stream streamToProcess = file.OpenReadStream();
+                string fileNameToProcess = file.FileName;
+                bool isPdf = extension == ".pdf";
+                MemoryStream? pdfConvertedStream = null;
 
-                // Azure Blob StorageのURIの場合、一時ファイルにダウンロード
-                string localFilePath = filePath;
-                bool isTemporaryFile = false;
-
-                if (Uri.TryCreate(filePath, UriKind.Absolute, out var uri) && (uri.Scheme == "http" || uri.Scheme == "https"))
+                // PDFの場合は画像に変換
+                if (isPdf)
                 {
-                    // URIの場合、Azure SDKを使って一時ファイルにダウンロード
-                    localFilePath = Path.Combine(Path.GetTempPath(), Path.GetFileName(uri.LocalPath));
+                    var originalStream = streamToProcess;
                     
-                    var connectionString = _configuration.GetConnectionString("AzureStorage");
-                    var blobClient = new BlobClient(connectionString, "receipt-images", Path.GetFileName(uri.LocalPath));
+                    // 元のPDFを保存
+                    originalStream.Position = 0;
+                    await _imageStorageService.SaveImageAsync(originalStream, file.FileName, CancellationToken.None);
                     
-                    await blobClient.DownloadToAsync(localFilePath, CancellationToken.None);
-                    isTemporaryFile = true;
+                    // PDFを画像に変換
+                    originalStream.Position = 0;
+                    pdfConvertedStream = new MemoryStream();
+                    
+                    // PDFtoImageを使用して変換
+                    await foreach (var image in Conversion.ToImagesAsync(originalStream))
+                    {
+                        image.Encode(pdfConvertedStream, SKEncodedImageFormat.Png, 100);
+                        break; // 最初のページのみ
+                    }
+                    
+                    pdfConvertedStream.Position = 0;
+                    streamToProcess = pdfConvertedStream;
+                    fileNameToProcess = Path.ChangeExtension(file.FileName, ".png");
+                }
+
+                // 処理用の画像を保存（非同期で並行実行）
+                var saveTask = _imageStorageService.SaveImageAsync(streamToProcess, fileNameToProcess, CancellationToken.None);
+
+                // ローカル一時ファイルに保存（OCR処理用）
+                var tempFilePath = Path.Combine(Path.GetTempPath(), fileNameToProcess);
+                streamToProcess.Position = 0;
+                await using (var fileStream = File.Create(tempFilePath))
+                {
+                    await streamToProcess.CopyToAsync(fileStream, CancellationToken.None);
                 }
 
                 try
                 {
                     // OCR処理
-                    var ocrResult = await _ocrService.ExtractTextAsync(localFilePath, CancellationToken.None);
+                    var ocrResult = await _ocrService.ExtractTextAsync(tempFilePath, CancellationToken.None);
+                    
+                    // 保存完了を待つ
+                    var filePath = await saveTask;
+                    
                     return new OkObjectResult(new { text = ocrResult, filePath });
                 }
                 finally
                 {
                     // 一時ファイルをクリーンアップ
-                    if (isTemporaryFile && File.Exists(localFilePath))
+                    if (File.Exists(tempFilePath))
                     {
-                        File.Delete(localFilePath);
+                        File.Delete(tempFilePath);
                     }
+                    
+                    // PDFから変換した場合はストリームをクリーンアップ
+                    pdfConvertedStream?.Dispose();
                 }
             }
             catch (Exception ex)
@@ -124,38 +155,67 @@ namespace Receiptfly.Functions
 
                 try
                 {
-                    // 画像を保存
-                    var filePath = await _imageStorageService.SaveImageAsync(file.OpenReadStream(), file.FileName, CancellationToken.None);
+                    Stream streamToProcess = file.OpenReadStream();
+                    string fileNameToProcess = file.FileName;
+                    bool isPdf = extension == ".pdf";
+                    MemoryStream? pdfConvertedStream = null;
 
-                    // Azure Blob StorageのURIの場合、一時ファイルにダウンロード
-                    string localFilePath = filePath;
-                    bool isTemporaryFile = false;
-
-                    if (Uri.TryCreate(filePath, UriKind.Absolute, out var uri) && (uri.Scheme == "http" || uri.Scheme == "https"))
+                    // PDFの場合は画像に変換
+                    if (isPdf)
                     {
-                        // URIの場合、Azure SDKを使って一時ファイルにダウンロード
-                        localFilePath = Path.Combine(Path.GetTempPath(), Path.GetFileName(uri.LocalPath));
+                        var originalStream = streamToProcess;
                         
-                        var connectionString = _configuration.GetConnectionString("AzureStorage");
-                        var blobClient = new BlobClient(connectionString, "receipt-images", Path.GetFileName(uri.LocalPath));
+                        // 元のPDFを保存
+                        originalStream.Position = 0;
+                        await _imageStorageService.SaveImageAsync(originalStream, file.FileName, CancellationToken.None);
                         
-                        await blobClient.DownloadToAsync(localFilePath, CancellationToken.None);
-                        isTemporaryFile = true;
+                        // PDFを画像に変換
+                        originalStream.Position = 0;
+                        pdfConvertedStream = new MemoryStream();
+                        
+                        // PDFtoImageを使用して変換
+                        await foreach (var image in Conversion.ToImagesAsync(originalStream))
+                        {
+                            image.Encode(pdfConvertedStream, SKEncodedImageFormat.Png, 100);
+                            break; // 最初のページのみ
+                        }
+                        
+                        pdfConvertedStream.Position = 0;
+                        streamToProcess = pdfConvertedStream;
+                        fileNameToProcess = Path.ChangeExtension(file.FileName, ".png");
+                    }
+
+                    // 処理用の画像を保存（非同期で並行実行）
+                    var saveTask = _imageStorageService.SaveImageAsync(streamToProcess, fileNameToProcess, CancellationToken.None);
+
+                    // ローカル一時ファイルに保存（OCR処理用）
+                    var tempFilePath = Path.Combine(Path.GetTempPath(), fileNameToProcess);
+                    streamToProcess.Position = 0;
+                    await using (var fileStream = File.Create(tempFilePath))
+                    {
+                        await streamToProcess.CopyToAsync(fileStream, CancellationToken.None);
                     }
 
                     try
                     {
                         // OCR処理
-                        var ocrResult = await _ocrService.ExtractTextAsync(localFilePath, CancellationToken.None);
+                        var ocrResult = await _ocrService.ExtractTextAsync(tempFilePath, CancellationToken.None);
+                        
+                        // 保存完了を待つ
+                        var filePath = await saveTask;
+                        
                         results.Add(new { fileName = file.FileName, text = ocrResult, filePath });
                     }
                     finally
                     {
                         // 一時ファイルをクリーンアップ
-                        if (isTemporaryFile && File.Exists(localFilePath))
+                        if (File.Exists(tempFilePath))
                         {
-                            File.Delete(localFilePath);
+                            File.Delete(tempFilePath);
                         }
+                        
+                        // PDFから変換した場合はストリームをクリーンアップ
+                        pdfConvertedStream?.Dispose();
                     }
                 }
                 catch (Exception ex)
