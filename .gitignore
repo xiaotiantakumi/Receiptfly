@@ -48,3 +48,6 @@ backend/Receiptfly.Api/uploads/
 /CLAUDE.md
 backend/onion_README.md
 backend/Receiptfly.Api/appsettings.Development.json
+
+tmp/
+.cursor/

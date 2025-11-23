@@ -25,6 +25,9 @@ var host = new HostBuilder()
         services.AddApplicationInsightsTelemetryWorkerService();
         services.ConfigureFunctionsApplicationInsights();
 
+        // HttpClient for forwarding requests to Processing Function
+        services.AddHttpClient();
+
         // MediatR
         services.AddMediatR(cfg => {
             cfg.RegisterServicesFromAssembly(typeof(Receiptfly.Application.Queries.GetReceipts.GetReceiptsQuery).Assembly);
