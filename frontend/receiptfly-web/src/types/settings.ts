@@ -51,6 +51,7 @@ export interface Settings {
   reminderTime: string; // HH:mm format
   highAmountAlert: boolean;
   alertAmount: number;
+  riskAlert: boolean;
   // Form Visibility
   formVisibility: {
     itemName: boolean;

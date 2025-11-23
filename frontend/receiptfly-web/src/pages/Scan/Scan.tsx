@@ -19,13 +19,14 @@ interface OcrResult {
   error?: string;
 }
 
-interface BatchReceiptResult {
-  fileName: string;
-  success: boolean;
-  receiptId?: string;
-  receipt?: any;
-  error?: string;
-}
+// BatchReceiptResult は現在未使用ですが、将来的に batch-from-ocr エンドポイントを使用する場合に必要になる可能性があります
+// interface BatchReceiptResult {
+//   fileName: string;
+//   success: boolean;
+//   receiptId?: string;
+//   receipt?: any;
+//   error?: string;
+// }
 
 export function Scan() {
   const navigate = useNavigate();
@@ -40,7 +41,6 @@ export function Scan() {
   const [isCreatingReceipts, setIsCreatingReceipts] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [ocrResults, setOcrResults] = useState<OcrResult[]>([]);
-  const [receiptResults, setReceiptResults] = useState<BatchReceiptResult[]>([]);
 
   // カメラの初期化
   useEffect(() => {
@@ -140,7 +140,6 @@ export function Scan() {
     setIsUploading(true);
     setUploadProgress({});
     setOcrResults([]);
-    setReceiptResults([]);
 
     try {
       const files = capturedImages.map(img => img.file);

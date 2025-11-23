@@ -1,6 +1,6 @@
 import React from 'react';
 import { useReceipts } from '../../context/ReceiptContext';
-import { PieChart, Wallet } from 'lucide-react';
+import { PieChart } from 'lucide-react';
 import styles from './Analytics.module.css';
 
 const Analytics: React.FC = () => {
