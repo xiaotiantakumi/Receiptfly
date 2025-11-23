@@ -2,7 +2,7 @@ namespace Receiptfly.Domain.Entities;
 
 public class Receipt
 {
-    public Guid Id { get; set; }
+    public string Id { get; set; } = string.Empty;
     public required string Store { get; set; }
     public required string Date { get; set; }
     public int Total { get; set; }
@@ -11,6 +11,8 @@ public class Receipt
     public string? PaymentMethod { get; set; }
     public string? RegistrationNumber { get; set; }
     public string? CreditAccount { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public string? OriginalFileName { get; set; }
     
     public ICollection<TransactionItem> Items { get; set; } = new List<TransactionItem>();
 
