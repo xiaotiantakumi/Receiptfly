@@ -1,0 +1,17 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "GoogleCloud:ApiKey": "YOUR_GOOGLE_CLOUD_API_KEY",
+    "Gemini:ApiKey": "YOUR_GEMINI_API_KEY",
+    "Gemini:ModelName": "gemini-flash-lite-latest",
+    "UseMockOcr": "false",
+    "UseMockReceiptGeneration": "false",
+    "UseAzure": "false",
+    "AzureStorage": "UseDevelopmentStorage=true"
+  },
+  "Host": {
+      "CORS": "*"
+  }
+}

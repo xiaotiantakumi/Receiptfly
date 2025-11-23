@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiptfly.Infrastructure",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiptfly.Api.Tests", "Receiptfly.Api.Tests\Receiptfly.Api.Tests.csproj", "{53B57B92-A1C0-41F1-80FB-D971CBED67B4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiptfly.Functions", "Receiptfly.Functions\Receiptfly.Functions.csproj", "{27BC7DF1-715A-4DBE-A5BC-D189632AFF20}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{53B57B92-A1C0-41F1-80FB-D971CBED67B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{53B57B92-A1C0-41F1-80FB-D971CBED67B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{53B57B92-A1C0-41F1-80FB-D971CBED67B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27BC7DF1-715A-4DBE-A5BC-D189632AFF20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27BC7DF1-715A-4DBE-A5BC-D189632AFF20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27BC7DF1-715A-4DBE-A5BC-D189632AFF20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27BC7DF1-715A-4DBE-A5BC-D189632AFF20}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

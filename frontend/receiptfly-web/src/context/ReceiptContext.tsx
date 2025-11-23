@@ -38,7 +38,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
   const fetchReceipts = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:5159/api/receipts');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/receipts`);
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
@@ -72,7 +72,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
         })
       );
 
-      await fetch(`http://localhost:5159/api/receipts/${receiptId}/items/${itemId}`, {
+      await fetch(`${import.meta.env.VITE_API_BASE_URL}/receipts/${receiptId}/items/${itemId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -91,7 +91,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
         )
       );
 
-      await fetch(`http://localhost:5159/api/receipts/${receiptId}`, {
+      await fetch(`${import.meta.env.VITE_API_BASE_URL}/receipts/${receiptId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
@@ -103,7 +103,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
 
   const createReceipt = async (receipt: any): Promise<Receipt | null> => {
     try {
-      const res = await fetch('http://localhost:5159/api/receipts', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/receipts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(receipt),

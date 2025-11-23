@@ -1,0 +1,53 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - main [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - button [ref=e8] [cursor=pointer]:
+            - img [ref=e9]
+          - generic [ref=e11]:
+            - img [ref=e12]
+            - heading "Test Store 1763866243292" [level=1] [ref=e16]
+        - generic [ref=e17]:
+          - generic [ref=e18]: 2025-11-23
+          - button [ref=e19] [cursor=pointer]:
+            - img [ref=e20]
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - generic [ref=e26]: 支払総額
+          - generic [ref=e27]: ¥1,000
+        - generic [ref=e28]:
+          - generic [ref=e29]: 申告対象
+          - generic [ref=e30]: ¥0
+      - generic [ref=e31]:
+        - heading "購入品目" [level=2] [ref=e32]
+        - generic [ref=e35] [cursor=pointer]:
+          - generic [ref=e36]:
+            - generic [ref=e37]: Test Item
+            - generic [ref=e39]: "Risk: Low"
+          - generic [ref=e40]:
+            - button [ref=e41]:
+              - img [ref=e42]
+            - generic [ref=e45]: ¥1000
+  - navigation [ref=e46]:
+    - generic [ref=e47]:
+      - link "ホーム" [ref=e48] [cursor=pointer]:
+        - /url: /
+        - img [ref=e49]
+        - generic [ref=e52]: ホーム
+      - link "集計" [ref=e53] [cursor=pointer]:
+        - /url: /analytics
+        - img [ref=e54]
+        - generic [ref=e57]: 集計
+      - link "スキャン" [ref=e58] [cursor=pointer]:
+        - /url: /scan
+        - img [ref=e59]
+        - generic [ref=e62]: スキャン
+      - link "設定" [ref=e63] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e64]
+        - generic [ref=e67]: 設定
+```

@@ -191,7 +191,7 @@ export function Scan() {
         firstItemOcrTextLength: batchRequest.items[0]?.ocrText?.length || 0
       });
 
-      const receiptResponse = await fetch('http://localhost:5159/api/receipts/batch-from-ocr', {
+      const receiptResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/receipts/batch-from-ocr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

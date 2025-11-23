@@ -43,12 +43,45 @@ dotnet run --project Receiptfly.Api/Receiptfly.Api.csproj
 
 バックエンドは `http://localhost:5159` で起動します。
 
+### バックエンドの起動 (Azure Functions)
+
+Azure Functions として起動する場合は以下のようにします。
+事前に [Azure Functions Core Tools](https://learn.microsoft.com/ja-jp/azure/azure-functions/functions-run-local) のインストールが必要です。
+
+```bash
+cd backend/Receiptfly.Functions
+func start
+```
+
+Functions は `http://localhost:7071` で起動します。
+APIのエンドポイントは `http://localhost:7071/api/...` となります。
+
 ### フロントエンドの起動
+
+フロントエンドの設定ファイルを作成します。
 
 ```bash
 cd frontend/receiptfly-web
+cp .env.example .env
+```
+
+`.env` ファイル内の `VITE_API_BASE_URL` がバックエンドのURL（Azure Functionsの場合は `http://localhost:7071/api`）になっていることを確認してください。
+
+```bash
 npm install
 npm run dev
 ```
 
 フロントエンドは `http://localhost:5173` で起動します。
+
+## Makefile による操作
+
+プロジェクトルートに `Makefile` を用意しています。以下のコマンドで各種操作を一括で行えます。
+
+- `make start`: バックエンドとフロントエンドを同時に起動します。
+- `make dev-backend`: バックエンドのみを起動します。
+- `make dev-frontend`: フロントエンドのみを起動します。
+- `make test-e2e`: E2Eテストを実行します。
+- `make build`: バックエンドをビルドします。
+- `make setup`: 依存関係のインストールとリストアを行います。
+
