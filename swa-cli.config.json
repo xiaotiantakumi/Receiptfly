@@ -1,0 +1,13 @@
+{
+  "$schema": "https://aka.ms/azure/static-web-apps-cli/schema",
+  "configurations": {
+    "receiptfly": {
+      "appLocation": "frontend/receiptfly-web",
+      "apiLocation": "backend/Receiptfly.Functions",
+      "outputLocation": "dist",
+      "apiLanguage": "dotnet-isolated",
+      "run": "npm run dev",
+      "appDevserverUrl": "http://localhost:5173"
+    }
+  }
+}

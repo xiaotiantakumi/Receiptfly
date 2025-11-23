@@ -4,6 +4,7 @@ import styles from './Scan.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../../context/SettingsContext';
 import { useReceipts } from '../../context/ReceiptContext';
+import { uploadMultipleBlobs } from '../../services/blobUploadService';
 
 interface CapturedImage {
   id: string;
@@ -37,6 +38,7 @@ export function Scan() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isCreatingReceipts, setIsCreatingReceipts] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [ocrResults, setOcrResults] = useState<OcrResult[]>([]);
   const [receiptResults, setReceiptResults] = useState<BatchReceiptResult[]>([]);
 
@@ -136,112 +138,71 @@ export function Scan() {
     if (capturedImages.length === 0) return;
 
     setIsUploading(true);
+    setUploadProgress({});
     setOcrResults([]);
     setReceiptResults([]);
 
     try {
-      // Step 1: OCR処理
-      const formData = new FormData();
-      capturedImages.forEach((image) => {
-        formData.append('files', image.file);
-      });
+      const files = capturedImages.map(img => img.file);
+      const accountTitles = settings.accountTitles.map(t => t.name);
+      const categories = settings.categories.map(c => c.name);
 
-      const ocrResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/ocr/batch`, {
-        method: 'POST',
-        body: formData,
-      });
+      // Step 1: Blob Storageに直接アップロード
+      console.log('Blob Storageへのアップロードを開始...');
+      const uploadResults = await uploadMultipleBlobs(
+        files,
+        'receipt-images',
+        (fileName, progress) => {
+          setUploadProgress(prev => ({ ...prev, [fileName]: progress }));
+        }
+      );
 
-      if (!ocrResponse.ok) {
-        throw new Error('OCR処理に失敗しました');
-      }
-
-      const ocrData = await ocrResponse.json();
-      const ocrResults = ocrData.results || [];
-      setOcrResults(ocrResults);
-
-      // OCRエラーがある場合は処理を中断
-      const ocrErrors = ocrResults.filter((r: OcrResult) => r.error || !r.text);
-      if (ocrErrors.length > 0) {
-        alert(`${ocrErrors.length}件の画像でOCR処理に失敗しました`);
+      // アップロード失敗がある場合は処理を中断
+      const failedUploads = uploadResults.filter(r => !r.success);
+      if (failedUploads.length > 0) {
+        const errorMessages = failedUploads.map(r => `${r.fileName}: ${r.error}`).join('\n');
+        alert(`${failedUploads.length}件のファイルのアップロードに失敗しました:\n${errorMessages}`);
         setIsUploading(false);
         return;
       }
 
-      // Step 2: レシート作成処理
+      console.log('アップロード完了:', uploadResults);
+
+      // Step 2: OCR処理をキューに送信
       setIsUploading(false);
       setIsCreatingReceipts(true);
 
-      const accountTitles = settings.accountTitles.map(t => t.name);
-      const categories = settings.categories.map(c => c.name);
-
-      const batchRequest = {
-        items: ocrResults.map((result: OcrResult) => ({
-          ocrText: result.text || '',
-          fileName: result.fileName,
-          filePath: result.filePath
-        })),
+      const blobPaths = uploadResults.map(r => r.blobPath);
+      const queueRequest = {
+        blobPaths,
         accountTitles,
         categories
       };
 
-      console.log('バッチリクエスト:', {
-        itemsCount: batchRequest.items.length,
-        accountTitlesCount: accountTitles.length,
-        categoriesCount: categories.length,
-        firstItemOcrTextLength: batchRequest.items[0]?.ocrText?.length || 0
-      });
+      console.log('OCR処理をキューに送信:', queueRequest);
 
-      const receiptResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/receipts/batch-from-ocr`, {
+      const queueResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/queue-ocr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(batchRequest),
+        body: JSON.stringify(queueRequest),
       });
 
-      if (!receiptResponse.ok) {
-        let errorMessage = `レシート作成に失敗しました (${receiptResponse.status})`;
-        try {
-          const errorData = await receiptResponse.json();
-          console.error('レシート作成エラー:', errorData);
-          if (errorData.errors) {
-            // ASP.NET Coreのバリデーションエラー
-            const errorDetails = Object.entries(errorData.errors)
-              .map(([key, value]: [string, any]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-              .join('; ');
-            errorMessage = `バリデーションエラー: ${errorDetails}`;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
-          } else if (errorData.message) {
-            errorMessage = errorData.message;
-          }
-        } catch (e) {
-          const errorText = await receiptResponse.text();
-          console.error('レシート作成エラー（JSON解析失敗）:', errorText);
-          errorMessage = `レシート作成に失敗しました: ${errorText.substring(0, 200)}`;
-        }
-        throw new Error(errorMessage);
+      if (!queueResponse.ok) {
+        const errorData = await queueResponse.json().catch(() => ({ error: 'Failed to queue OCR processing' }));
+        throw new Error(errorData.error || `キューへの送信に失敗しました: ${queueResponse.status}`);
       }
 
-      const receiptData = await receiptResponse.json();
-      console.log('レシート作成レスポンス:', receiptData);
-      const results = receiptData.results || [];
-      setReceiptResults(results);
-      
-      // 結果をログに出力
-      console.log('レシート作成結果:', {
-        total: receiptData.total,
-        succeeded: receiptData.succeeded,
-        failed: receiptData.failed,
-        results: results
-      });
+      const queueData = await queueResponse.json();
+      console.log('キュー送信完了:', queueData);
 
+      // Step 3: 処理完了を待つ（ポーリング）
+      // 簡易実装: 一定時間待機してからレシート一覧を更新
+      // 本番環境では、WebSocketやSignalRを使用してリアルタイム通知を実装することを推奨
+      await new Promise(resolve => setTimeout(resolve, 5000)); // 5秒待機
 
-      // 結果を表示
-      const succeeded = results.filter((r: BatchReceiptResult) => r.success).length;
-      const failed = results.filter((r: BatchReceiptResult) => !r.success).length;
-
-      // レシート一覧を再取得（ホーム画面に遷移する前に）
+      // Step 4: レシート一覧を更新
       try {
         await refreshReceipts();
         console.log('レシート一覧を再取得しました');
@@ -249,24 +210,21 @@ export function Scan() {
         console.error('レシート一覧の再取得に失敗しました:', refreshError);
       }
 
-      if (failed > 0) {
-        alert(`${succeeded}件のレシートを作成しました。${failed}件のレシート作成に失敗しました。`);
-      } else {
-        alert(`${succeeded}件のレシートを作成しました。`);
-      }
+      alert(`${uploadResults.length}件の画像をアップロードし、OCR処理を開始しました。処理完了後、レシート一覧に反映されます。`);
 
-      // 少し待ってからホーム画面に遷移（レシート一覧の更新を確実にするため）
+      // ホーム画面に遷移
       setTimeout(() => {
         navigate('/');
       }, 100);
     } catch (error) {
       console.error('アップロードエラー:', error);
-      alert('画像のアップロードまたはレシート作成に失敗しました');
+      alert(`画像のアップロードまたはOCR処理の開始に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsUploading(false);
       setIsCreatingReceipts(false);
     } finally {
       setIsUploading(false);
       setIsCreatingReceipts(false);
+      setUploadProgress({});
     }
   };
 
@@ -374,12 +332,12 @@ export function Scan() {
               {isUploading ? (
                 <>
                   <Loader2 size={18} className={styles.spinner} />
-                  OCR処理中...
+                  アップロード中...
                 </>
               ) : isCreatingReceipts ? (
                 <>
                   <Loader2 size={18} className={styles.spinner} />
-                  レシート作成中...
+                  OCR処理開始中...
                 </>
               ) : (
                 <>
@@ -388,6 +346,22 @@ export function Scan() {
                 </>
               )}
             </button>
+            {Object.keys(uploadProgress).length > 0 && (
+              <div className={styles.progressContainer}>
+                {Object.entries(uploadProgress).map(([fileName, progress]) => (
+                  <div key={fileName} className={styles.progressItem}>
+                    <span className={styles.progressFileName}>{fileName}</span>
+                    <div className={styles.progressBar}>
+                      <div 
+                        className={styles.progressFill} 
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                    <span className={styles.progressPercent}>{Math.round(progress)}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
             {ocrResults.length > 0 && (
               <div className={styles.ocrResults}>
                 <h4>OCR結果</h4>
