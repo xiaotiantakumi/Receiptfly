@@ -48,7 +48,20 @@ jobs:
             /p:PublishSingleFile=false \
             /p:IncludeNativeLibrariesForSelfExtract=false \
             /p:EnableCompressionInSingleFile=false \
-            /p:SelfContained=false
+            /p:SelfContained=false \
+            /p:DebugType=None \
+            /p:DebugSymbols=false \
+            /p:IncludeSymbols=false \
+            /p:IncludeSource=false
+      
+      # ビルドサイズを削減するため、不要なファイルを削除
+      - name: Remove unnecessary files to reduce size
+        run: |
+          find frontend/receiptfly-web/api -name "*.pdb" -delete || true
+          find frontend/receiptfly-web/api -name "*.xml" -delete || true
+          find frontend/receiptfly-web/api -name "*.json" -not -name "host.json" -not -name "appsettings.json" -not -name "staticwebapp.config.json" -delete || true
+          find frontend/receiptfly-web/api -type d -name "runtimes" -exec rm -rf {} + || true
+          du -sh frontend/receiptfly-web/api || true
 
       # host.json を api フォルダにコピー
       - name: Copy host.json to API folder
