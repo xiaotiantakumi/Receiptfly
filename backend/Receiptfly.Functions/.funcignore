@@ -1,0 +1,35 @@
+# Build outputs
+bin/
+obj/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# User-specific files
+*.user
+*.suo
+*.cache
+
+# Test results
+TestResults/
+
+# Local settings
+local.settings.json
+
+# Node modules (if any)
+node_modules/
+
+# Documentation
+README.md
+
+# Properties
+Properties/launchSettings.json
+
