@@ -28,7 +28,7 @@ namespace Receiptfly.Functions
         }
 
         [Function("GetReceipts")]
-        public async Task<IActionResult> GetReceipts([HttpTrigger(AuthorizationLevel.Function, "get", Route = "receipts")] HttpRequest req)
+        public async Task<IActionResult> GetReceipts([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "receipts")] HttpRequest req)
         {
             _logger.LogInformation("Getting all receipts.");
             var receipts = await _mediator.Send(new GetReceiptsQuery());
@@ -36,7 +36,7 @@ namespace Receiptfly.Functions
         }
 
         [Function("GetReceipt")]
-        public async Task<IActionResult> GetReceipt([HttpTrigger(AuthorizationLevel.Function, "get", Route = "receipts/{id}")] HttpRequest req, string id)
+        public async Task<IActionResult> GetReceipt([HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "receipts/{id}")] HttpRequest req, string id)
         {
             if (!Guid.TryParse(id, out var receiptId))
             {

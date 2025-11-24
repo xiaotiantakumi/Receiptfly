@@ -34,7 +34,9 @@ var host = new HostBuilder()
         });
 
         // Database Configuration
-        var useAzure = configuration.GetValue<bool>("UseAzure", false);
+        // デフォルトはAzure Storageを使用（本番環境）
+        // ローカル開発時は local.settings.json で UseAzure=false を明示的に指定
+        var useAzure = configuration.GetValue<bool>("UseAzure", true);
         var azureConnectionString = configuration.GetConnectionString("AzureStorage") ?? "UseDevelopmentStorage=true";
 
         if (useAzure)
@@ -113,11 +115,13 @@ var host = new HostBuilder()
     .Build();
 
 // Database Initialization (for local development with SQLite)
+// デフォルトはAzure Storageを使用（本番環境）
+// ローカル開発時は local.settings.json で UseAzure=false を明示的に指定
 using (var scope = host.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var configuration = services.GetRequiredService<IConfiguration>();
-    var useAzure = configuration.GetValue<bool>("UseAzure", false);
+    var useAzure = configuration.GetValue<bool>("UseAzure", true);
 
     if (!useAzure)
     {
