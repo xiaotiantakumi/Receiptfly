@@ -41,6 +41,15 @@ module keyvault 'modules/keyvault.bicep' = {
   }
 }
 
+module staticwebapp 'modules/staticwebapp.bicep' = {
+  name: 'staticwebapp'
+  params: {
+    location: 'eastasia' // Changed to a supported region for Static Web Apps
+    env: env
+    appName: appName
+  }
+}
+
 module functions 'modules/functions.bicep' = {
   name: 'functions'
   params: {
@@ -50,15 +59,7 @@ module functions 'modules/functions.bicep' = {
     storageAccountName: storage.outputs.storageAccountName
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     keyVaultName: keyvault.outputs.keyVaultName
-  }
-}
-
-module staticwebapp 'modules/staticwebapp.bicep' = {
-  name: 'staticwebapp'
-  params: {
-    location: 'eastasia' // Changed to a supported region for Static Web Apps
-    env: env
-    appName: appName
+    staticWebAppHostname: staticwebapp.outputs.staticWebAppDefaultHostname
   }
 }
 

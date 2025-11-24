@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.34.44.8038",
-      "templateHash": "3587267001886697256"
+      "templateHash": "10395659790640951624"
     }
   },
   "parameters": {
@@ -386,6 +386,89 @@
     {
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2022-09-01",
+      "name": "staticwebapp",
+      "properties": {
+        "expressionEvaluationOptions": {
+          "scope": "inner"
+        },
+        "mode": "Incremental",
+        "parameters": {
+          "location": {
+            "value": "eastasia"
+          },
+          "env": {
+            "value": "[parameters('env')]"
+          },
+          "appName": {
+            "value": "[parameters('appName')]"
+          }
+        },
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "metadata": {
+            "_generator": {
+              "name": "bicep",
+              "version": "0.34.44.8038",
+              "templateHash": "6065413661755742729"
+            }
+          },
+          "parameters": {
+            "location": {
+              "type": "string",
+              "defaultValue": "[resourceGroup().location]",
+              "metadata": {
+                "description": "Location for the Static Web App"
+              }
+            },
+            "env": {
+              "type": "string",
+              "defaultValue": "dev",
+              "metadata": {
+                "description": "Environment name (dev, test, prod)"
+              }
+            },
+            "appName": {
+              "type": "string",
+              "defaultValue": "receiptfly",
+              "metadata": {
+                "description": "Application name prefix"
+              }
+            }
+          },
+          "variables": {
+            "envNumber": "[if(equals(parameters('env'), 'dev'), '001', if(equals(parameters('env'), 'test'), '002', '003'))]",
+            "staticWebAppName": "[format('swa-{0}-{1}-{2}', toLower(parameters('appName')), parameters('env'), variables('envNumber'))]"
+          },
+          "resources": [
+            {
+              "type": "Microsoft.Web/staticSites",
+              "apiVersion": "2022-03-01",
+              "name": "[variables('staticWebAppName')]",
+              "location": "[parameters('location')]",
+              "sku": {
+                "name": "Free",
+                "tier": "Free"
+              },
+              "properties": {}
+            }
+          ],
+          "outputs": {
+            "staticWebAppName": {
+              "type": "string",
+              "value": "[variables('staticWebAppName')]"
+            },
+            "staticWebAppDefaultHostname": {
+              "type": "string",
+              "value": "[reference(resourceId('Microsoft.Web/staticSites', variables('staticWebAppName')), '2022-03-01').defaultHostname]"
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2022-09-01",
       "name": "functions",
       "properties": {
         "expressionEvaluationOptions": {
@@ -410,6 +493,9 @@
           },
           "keyVaultName": {
             "value": "[reference(resourceId('Microsoft.Resources/deployments', 'keyvault'), '2022-09-01').outputs.keyVaultName.value]"
+          },
+          "staticWebAppHostname": {
+            "value": "[reference(resourceId('Microsoft.Resources/deployments', 'staticwebapp'), '2022-09-01').outputs.staticWebAppDefaultHostname.value]"
           }
         },
         "template": {
@@ -419,7 +505,7 @@
             "_generator": {
               "name": "bicep",
               "version": "0.34.44.8038",
-              "templateHash": "3399338227872158358"
+              "templateHash": "11680771744584339179"
             }
           },
           "parameters": {
@@ -461,11 +547,19 @@
               "metadata": {
                 "description": "Key Vault name"
               }
+            },
+            "staticWebAppHostname": {
+              "type": "string",
+              "defaultValue": "",
+              "metadata": {
+                "description": "Static Web App default hostname for CORS configuration"
+              }
             }
           },
           "variables": {
             "apiFunctionAppName": "[format('func-{0}-api-{1}-001', toLower(parameters('appName')), parameters('env'))]",
             "processingFunctionAppName": "[format('func-{0}-processing-{1}-001', toLower(parameters('appName')), parameters('env'))]",
+            "corsAllowedOrigins": "[if(not(equals(parameters('staticWebAppHostname'), '')), createArray(format('https://{0}', parameters('staticWebAppHostname')), 'https://*.azurestaticapps.net'), createArray('https://*.azurestaticapps.net'))]",
             "storageBlobDataContributorRoleId": "ba92f5b4-2d11-453d-a403-e96b0029c9fe",
             "storageTableDataContributorRoleId": "0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3",
             "keyVaultSecretsUserRoleId": "4633458b-17de-408a-b874-0445c86b69e6"
@@ -526,6 +620,20 @@
               }
             },
             {
+              "type": "Microsoft.Web/sites/config",
+              "apiVersion": "2024-04-01",
+              "name": "[format('{0}/{1}', variables('apiFunctionAppName'), 'web')]",
+              "properties": {
+                "cors": {
+                  "allowedOrigins": "[variables('corsAllowedOrigins')]",
+                  "supportCredentials": false
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('apiFunctionAppName'))]"
+              ]
+            },
+            {
               "type": "Microsoft.Web/sites",
               "apiVersion": "2024-04-01",
               "name": "[variables('processingFunctionAppName')]",
@@ -578,6 +686,20 @@
                   "minTlsVersion": "1.2"
                 }
               }
+            },
+            {
+              "type": "Microsoft.Web/sites/config",
+              "apiVersion": "2024-04-01",
+              "name": "[format('{0}/{1}', variables('processingFunctionAppName'), 'web')]",
+              "properties": {
+                "cors": {
+                  "allowedOrigins": "[variables('corsAllowedOrigins')]",
+                  "supportCredentials": false
+                }
+              },
+              "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('processingFunctionAppName'))]"
+              ]
             },
             {
               "type": "Microsoft.Authorization/roleAssignments",
@@ -687,91 +809,9 @@
       "dependsOn": [
         "[resourceId('Microsoft.Resources/deployments', 'keyvault')]",
         "[resourceId('Microsoft.Resources/deployments', 'monitoring')]",
+        "[resourceId('Microsoft.Resources/deployments', 'staticwebapp')]",
         "[resourceId('Microsoft.Resources/deployments', 'storage')]"
       ]
-    },
-    {
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2022-09-01",
-      "name": "staticwebapp",
-      "properties": {
-        "expressionEvaluationOptions": {
-          "scope": "inner"
-        },
-        "mode": "Incremental",
-        "parameters": {
-          "location": {
-            "value": "eastasia"
-          },
-          "env": {
-            "value": "[parameters('env')]"
-          },
-          "appName": {
-            "value": "[parameters('appName')]"
-          }
-        },
-        "template": {
-          "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-          "contentVersion": "1.0.0.0",
-          "metadata": {
-            "_generator": {
-              "name": "bicep",
-              "version": "0.34.44.8038",
-              "templateHash": "6065413661755742729"
-            }
-          },
-          "parameters": {
-            "location": {
-              "type": "string",
-              "defaultValue": "[resourceGroup().location]",
-              "metadata": {
-                "description": "Location for the Static Web App"
-              }
-            },
-            "env": {
-              "type": "string",
-              "defaultValue": "dev",
-              "metadata": {
-                "description": "Environment name (dev, test, prod)"
-              }
-            },
-            "appName": {
-              "type": "string",
-              "defaultValue": "receiptfly",
-              "metadata": {
-                "description": "Application name prefix"
-              }
-            }
-          },
-          "variables": {
-            "envNumber": "[if(equals(parameters('env'), 'dev'), '001', if(equals(parameters('env'), 'test'), '002', '003'))]",
-            "staticWebAppName": "[format('swa-{0}-{1}-{2}', toLower(parameters('appName')), parameters('env'), variables('envNumber'))]"
-          },
-          "resources": [
-            {
-              "type": "Microsoft.Web/staticSites",
-              "apiVersion": "2022-03-01",
-              "name": "[variables('staticWebAppName')]",
-              "location": "[parameters('location')]",
-              "sku": {
-                "name": "Free",
-                "tier": "Free"
-              },
-              "properties": {}
-            }
-          ],
-          "outputs": {
-            "staticWebAppName": {
-              "type": "string",
-              "value": "[variables('staticWebAppName')]"
-            },
-            "staticWebAppDefaultHostname": {
-              "type": "string",
-              "value": "[reference(resourceId('Microsoft.Web/staticSites', variables('staticWebAppName')), '2022-03-01').defaultHostname]"
-            }
-          }
-        }
-      }
     }
   ],
   "outputs": {

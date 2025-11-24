@@ -113,6 +113,71 @@ az keyvault secret set \
     --value "YOUR_GEMINI_API_KEY"
 ```
 
+## ソースコードのデプロイ
+
+インフラストラクチャのデプロイ後、アプリケーションコードをデプロイします。
+
+### 前提条件
+
+- Azure Functions Core Tools がインストールされていること
+
+  ```bash
+  # macOS
+  brew tap azure/functions
+  brew install azure-functions-core-tools@4
+
+  # または npm
+  npm install -g azure-functions-core-tools@4 --unsafe-perm true
+  ```
+
+- Azure Static Web Apps CLI がインストールされていること
+
+  ```bash
+  npm install -g @azure/static-web-apps-cli
+  ```
+
+- .NET 8 SDK がインストールされていること
+- Node.js と npm がインストールされていること
+
+### Function Apps のデプロイ
+
+```bash
+cd infra/scripts
+./deploy-functions.sh dev rg-receiptfly-dev
+```
+
+このスクリプトは以下を実行します：
+
+1. API Function App (`func-receiptfly-api-dev-001`) をビルドしてデプロイ
+2. Processing Function App (`func-receiptfly-processing-dev-001`) をビルドしてデプロイ
+
+### Static Web App のデプロイ
+
+```bash
+cd infra/scripts
+./deploy-staticwebapp.sh dev rg-receiptfly-dev
+```
+
+このスクリプトは以下を実行します：
+
+1. Frontend をビルド（`npm run build`）
+2. Static Web App にデプロイ
+
+### 全体デプロイ（推奨）
+
+インフラストラクチャとソースコードを一度にデプロイする場合：
+
+```bash
+cd infra/scripts
+./deploy-all.sh dev japaneast rg-receiptfly-dev
+```
+
+このスクリプトは以下を順番に実行します：
+
+1. インフラストラクチャのデプロイ（リソースグループが存在しない場合のみ）
+2. Function Apps のデプロイ
+3. Static Web App のデプロイ
+
 ## トラブルシューティング
 
 ### デプロイエラー
@@ -124,6 +189,18 @@ az keyvault secret set \
 
 - Managed Identity の権限設定が反映されるまで数分かかる場合があります
 - Key Vault のシークレットは手動で登録する必要があります
+
+### Function Apps のデプロイエラー
+
+- Azure Functions Core Tools が正しくインストールされているか確認してください
+- Function App が存在するか確認してください（インフラストラクチャのデプロイを先に実行）
+- ビルドエラーが発生する場合、ローカルで `dotnet build` を実行して確認してください
+
+### Static Web App のデプロイエラー
+
+- Azure Static Web Apps CLI が正しくインストールされているか確認してください
+- Static Web App が存在するか確認してください（インフラストラクチャのデプロイを先に実行）
+- Deployment token が取得できない場合、Azure Portal から手動で取得してください
 
 ## コスト最適化
 

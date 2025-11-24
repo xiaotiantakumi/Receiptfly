@@ -18,8 +18,22 @@ param appInsightsConnectionString string
 @description('Key Vault name')
 param keyVaultName string
 
+@description('Static Web App default hostname for CORS configuration')
+param staticWebAppHostname string = ''
+
 var apiFunctionAppName = 'func-${toLower(appName)}-api-${env}-001'
 var processingFunctionAppName = 'func-${toLower(appName)}-processing-${env}-001'
+
+// CORS設定用のallowedOriginsを構築
+// Static Web AppのURLとワイルドカードパターンを含める
+var corsAllowedOrigins = staticWebAppHostname != '' 
+  ? [
+      'https://${staticWebAppHostname}'
+      'https://*.azurestaticapps.net'
+    ]
+  : [
+      'https://*.azurestaticapps.net'
+    ]
 var storageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 var storageTableDataContributorRoleId = '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
 var keyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
@@ -71,8 +85,23 @@ resource apiFunctionApp 'Microsoft.Web/sites@2024-04-01' = {
           name: 'Gemini:ApiKey'
           value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=GeminiApiKey)'
         }
+        {
+          name: 'UseAzure'
+          value: 'true'
+        }
       ]
       minTlsVersion: '1.2'
+    }
+  }
+}
+
+resource apiFunctionAppConfig 'Microsoft.Web/sites/config@2024-04-01' = {
+  parent: apiFunctionApp
+  name: 'web'
+  properties: {
+    cors: {
+      allowedOrigins: corsAllowedOrigins
+      supportCredentials: false
     }
   }
 }
@@ -124,8 +153,23 @@ resource processingFunctionApp 'Microsoft.Web/sites@2024-04-01' = {
           name: 'Gemini:ApiKey'
           value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=GeminiApiKey)'
         }
+        {
+          name: 'UseAzure'
+          value: 'true'
+        }
       ]
       minTlsVersion: '1.2'
+    }
+  }
+}
+
+resource processingFunctionAppConfig 'Microsoft.Web/sites/config@2024-04-01' = {
+  parent: processingFunctionApp
+  name: 'web'
+  properties: {
+    cors: {
+      allowedOrigins: corsAllowedOrigins
+      supportCredentials: false
     }
   }
 }
