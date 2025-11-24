@@ -7,8 +7,9 @@ using Receiptfly.Application.Services;
 using Azure.Storage.Blobs;
 using Azure.Storage.Queues;
 using System.Text.Json;
-using PDFtoImage;
-using SkiaSharp;
+// PDFtoImageとSkiaSharpは廃止予定の関数でのみ使用されており、実際にはProcessing Functionで処理されるため削除（サイズ削減）
+// using PDFtoImage;
+// using SkiaSharp;
 
 namespace Receiptfly.Functions
 {

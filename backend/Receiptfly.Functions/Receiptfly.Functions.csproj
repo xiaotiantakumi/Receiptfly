@@ -37,7 +37,8 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
     <!-- PostgreSQLは使用していないため削除（サイズ削減） -->
     <!-- <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" /> -->
-    <PackageReference Include="PDFtoImage" Version="5.2.0" />
+    <!-- PDFtoImageは廃止予定の関数でのみ使用されており、実際にはProcessing Functionで処理されるため削除（サイズ削減） -->
+    <!-- <PackageReference Include="PDFtoImage" Version="5.2.0" /> -->
   </ItemGroup>
 
   <ItemGroup>
