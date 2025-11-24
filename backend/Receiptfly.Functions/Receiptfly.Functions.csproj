@@ -15,9 +15,9 @@
     <IncludeSource>false</IncludeSource>
     <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
-    <!-- 未使用コードの削除（Trim）を有効化 -->
-    <PublishTrimmed>true</PublishTrimmed>
-    <TrimMode>partial</TrimMode>
+    <!-- PublishTrimmedはSelfContained: trueが必要だが、Static Web Appsではframework-dependentが推奨のため無効化 -->
+    <!-- <PublishTrimmed>true</PublishTrimmed> -->
+    <!-- <TrimMode>partial</TrimMode> -->
     <!-- アセンブリのリンクを有効化 -->
     <PublishReadyToRun>false</PublishReadyToRun>
     <!-- メタデータの削減 -->
