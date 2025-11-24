@@ -9,7 +9,6 @@ using Receiptfly.Application.Commands.UpdateReceipt;
 using Receiptfly.Application.Commands.UpdateTransactionItem;
 using Receiptfly.Application.Queries.GetReceiptById;
 using Receiptfly.Application.Queries.GetReceipts;
-using Receiptfly.Application.Services;
 using System.Text.Json;
 
 namespace Receiptfly.Functions
@@ -18,13 +17,11 @@ namespace Receiptfly.Functions
     {
         private readonly ILogger<ReceiptFunctions> _logger;
         private readonly IMediator _mediator;
-        private readonly IReceiptGenerationService _receiptGenerationService;
 
-        public ReceiptFunctions(ILogger<ReceiptFunctions> logger, IMediator mediator, IReceiptGenerationService receiptGenerationService)
+        public ReceiptFunctions(ILogger<ReceiptFunctions> logger, IMediator mediator)
         {
             _logger = logger;
             _mediator = mediator;
-            _receiptGenerationService = receiptGenerationService;
         }
 
         [Function("GetReceipts")]
@@ -175,171 +172,6 @@ namespace Receiptfly.Functions
             return new CreatedResult($"/api/receipts/{receipt.Id}", receipt);
         }
 
-        [Function("GenerateReceiptFromOcr")]
-        public async Task<IActionResult> GenerateReceiptFromOcr([HttpTrigger(AuthorizationLevel.Function, "post", Route = "receipts/from-ocr")] HttpRequest req)
-        {
-            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            var request = JsonSerializer.Deserialize<GenerateReceiptFromOcrRequest>(requestBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (request == null)
-            {
-                 return new BadRequestObjectResult(new { error = "Invalid request body" });
-            }
-
-            if (string.IsNullOrWhiteSpace(request.OcrText))
-            {
-                return new BadRequestObjectResult(new { error = "OCR text is required" });
-            }
-
-            if (request.AccountTitles == null || request.AccountTitles.Count == 0)
-            {
-                return new BadRequestObjectResult(new { error = "Account titles are required" });
-            }
-
-            if (request.Categories == null || request.Categories.Count == 0)
-            {
-                return new BadRequestObjectResult(new { error = "Categories are required" });
-            }
-
-            try
-            {
-                var receiptData = await _receiptGenerationService.GenerateReceiptFromOcrAsync(
-                    request.OcrText,
-                    request.AccountTitles,
-                    request.Categories
-                );
-
-                var createCommand = new CreateReceiptCommand(
-                    receiptData.Store,
-                    receiptData.Date,
-                    receiptData.Tel,
-                    receiptData.PaymentMethod,
-                    receiptData.Address,
-                    receiptData.RegistrationNumber,
-                    receiptData.CreditAccount,
-                    receiptData.Items.Select(item => new CreateReceiptItemDto(
-                        item.Name,
-                        item.Amount,
-                        item.IsTaxReturn,
-                        item.Category,
-                        item.AiCategory,
-                        item.AiRisk,
-                        item.Memo,
-                        item.TaxType,
-                        item.AccountTitle
-                    )).ToList()
-                );
-
-                var receipt = await _mediator.Send(createCommand);
-
-                return new CreatedResult($"/api/receipts/{receipt.Id}", receipt);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to generate receipt from OCR");
-                return new ObjectResult(new { error = "Failed to generate receipt from OCR", message = ex.Message }) { StatusCode = 500 };
-            }
-        }
-
-        [Function("GenerateReceiptsFromOcrBatch")]
-        public async Task<IActionResult> GenerateReceiptsFromOcrBatch([HttpTrigger(AuthorizationLevel.Function, "post", Route = "receipts/batch-from-ocr")] HttpRequest req)
-        {
-            var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            var request = JsonSerializer.Deserialize<BatchGenerateReceiptFromOcrRequest>(requestBody, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            if (request == null)
-            {
-                 return new BadRequestObjectResult(new { error = "Invalid request body" });
-            }
-
-            if (request.Items == null || request.Items.Count == 0)
-            {
-                return new BadRequestObjectResult(new { error = "At least one OCR item is required" });
-            }
-
-            if (request.AccountTitles == null || request.AccountTitles.Count == 0)
-            {
-                return new BadRequestObjectResult(new { error = "Account titles are required" });
-            }
-
-            if (request.Categories == null || request.Categories.Count == 0)
-            {
-                return new BadRequestObjectResult(new { error = "Categories are required" });
-            }
-
-            var results = new List<BatchReceiptResult>();
-
-            foreach (var item in request.Items)
-            {
-                if (string.IsNullOrWhiteSpace(item.OcrText))
-                {
-                    results.Add(new BatchReceiptResult
-                    {
-                        FileName = item.FileName ?? "unknown",
-                        Success = false,
-                        Error = "OCR text is required"
-                    });
-                    continue;
-                }
-
-                try
-                {
-                    var receiptData = await _receiptGenerationService.GenerateReceiptFromOcrAsync(
-                        item.OcrText,
-                        request.AccountTitles,
-                        request.Categories
-                    );
-
-                    var createCommand = new CreateReceiptCommand(
-                        receiptData.Store,
-                        receiptData.Date,
-                        receiptData.Tel,
-                        receiptData.PaymentMethod,
-                        receiptData.Address,
-                        receiptData.RegistrationNumber,
-                        receiptData.CreditAccount,
-                        receiptData.Items.Select(item => new CreateReceiptItemDto(
-                            item.Name,
-                            item.Amount,
-                            item.IsTaxReturn,
-                            item.Category,
-                            item.AiCategory,
-                            item.AiRisk,
-                            item.Memo,
-                            item.TaxType,
-                            item.AccountTitle
-                        )).ToList()
-                    );
-
-                    var receipt = await _mediator.Send(createCommand);
-
-                    results.Add(new BatchReceiptResult
-                    {
-                        FileName = item.FileName ?? "unknown",
-                        Success = true,
-                        ReceiptId = receipt.Id,
-                        Receipt = receipt
-                    });
-                }
-                catch (Exception ex)
-                {
-                    results.Add(new BatchReceiptResult
-                    {
-                        FileName = item.FileName ?? "unknown",
-                        Success = false,
-                        Error = ex.Message
-                    });
-                }
-            }
-
-            return new OkObjectResult(new
-            {
-                total = request.Items.Count,
-                succeeded = results.Count(r => r.Success),
-                failed = results.Count(r => !r.Success),
-                results = results
-            });
-        }
 
         // DTOs
         public class UpdateItemRequest
@@ -391,34 +223,5 @@ namespace Receiptfly.Functions
             public string? AccountTitle { get; set; }
         }
 
-        public class GenerateReceiptFromOcrRequest
-        {
-            public required string OcrText { get; set; }
-            public required List<string> AccountTitles { get; set; }
-            public required List<string> Categories { get; set; }
-        }
-
-        public class BatchGenerateReceiptFromOcrRequest
-        {
-            public required List<OcrItem> Items { get; set; }
-            public required List<string> AccountTitles { get; set; }
-            public required List<string> Categories { get; set; }
-        }
-
-        public class OcrItem
-        {
-            public required string OcrText { get; set; }
-            public string? FileName { get; set; }
-            public string? FilePath { get; set; }
-        }
-
-        public class BatchReceiptResult
-        {
-            public required string FileName { get; set; }
-            public required bool Success { get; set; }
-            public Guid? ReceiptId { get; set; }
-            public object? Receipt { get; set; }
-            public string? Error { get; set; }
-        }
     }
 }

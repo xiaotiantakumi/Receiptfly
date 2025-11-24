@@ -44,9 +44,6 @@ var host = new HostBuilder()
             // Register Azure Repositories
             services.AddScoped<IReceiptRepository>(provider => 
                 new AzureTableReceiptRepository(azureConnectionString));
-                
-            services.AddScoped<IImageStorageService>(provider => 
-                new AzureBlobImageStorageService(azureConnectionString));
         }
         else
         {
@@ -56,61 +53,8 @@ var host = new HostBuilder()
 
             // Register EF Repositories
             services.AddScoped<IReceiptRepository, EfReceiptRepository>();
-            
-            // Local File Storage
-            services.AddScoped<IImageStorageService>(provider =>
-            {
-                // In Functions, we might not have a persistent local storage in production,
-                // but for local dev we can use a folder relative to the function app.
-                // Note: In Azure, this will be read-only or ephemeral unless using Azure Files mount.
-                // But since we switch to AzureBlobImageStorageService when UseAzure is true, this path is only for local dev.
-                var hostingEnvironment = provider.GetRequiredService<IHostEnvironment>();
-                var uploadsDirectory = Path.Combine(hostingEnvironment.ContentRootPath, "uploads");
-                if (!Directory.Exists(uploadsDirectory))
-                {
-                    Directory.CreateDirectory(uploadsDirectory);
-                }
-                return new LocalFileStorageService(uploadsDirectory);
-            });
         }
 
-        // OCR Service
-        var apiKey = configuration["GoogleCloud:ApiKey"] 
-            ?? Environment.GetEnvironmentVariable("GOOGLE_CLOUD_API_KEY");
-        var useMockOcr = configuration.GetValue<bool>("UseMockOcr", false);
-
-        if (useMockOcr)
-        {
-            services.AddScoped<IOcrService, MockGoogleVisionOcrService>();
-        }
-        else
-        {
-            services.AddScoped<IOcrService>(provider => new GoogleVisionOcrService(apiKey));
-        }
-
-        // Receipt Generation Service
-        var geminiApiKey = configuration["Gemini:ApiKey"] ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY");
-        var geminiModelName = configuration["Gemini:ModelName"] 
-            ?? Environment.GetEnvironmentVariable("GEMINI_MODEL_NAME") 
-            ?? "gemini-flash-lite-latest";
-        var useMockReceiptGeneration = configuration.GetValue<bool>("UseMockReceiptGeneration", false);
-
-        if (useMockReceiptGeneration)
-        {
-            services.AddScoped<IReceiptGenerationService, MockGeminiReceiptGenerationService>();
-        }
-        else
-        {
-             if (!string.IsNullOrEmpty(geminiApiKey) && geminiApiKey != "your-gemini-api-key-here")
-            {
-                services.AddScoped<IReceiptGenerationService>(provider => 
-                    new GeminiReceiptGenerationService(geminiApiKey, geminiModelName));
-            }
-            else
-            {
-                services.AddScoped<IReceiptGenerationService, MockGeminiReceiptGenerationService>();
-            }
-        }
     })
     .Build();
 
