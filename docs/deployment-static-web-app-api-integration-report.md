@@ -226,12 +226,273 @@ jobs:
 - [Microsoft Q&A - Azure Static Web Apps Limit 104857600 bytes](https://learn.microsoft.com/en-us/answers/questions/1631839/azure-static-web-apps-limit-104857600-bytes-why)
 - [GitHub Issue #795 - Help! Deploying pre-built API](https://github.com/Azure/static-web-apps/issues/795)
 
-## コミット履歴
+## 詳細なコミット履歴と対応内容
 
-1. `:bug: Change skip_api_build to false for Free plan compatibility`
-2. `:zap: Optimize build size for Static Web Apps 100MB limit`
-3. `:zap: Remove unused PDFtoImage and SkiaSharp packages from API Functions`
-4. `:bug: Disable PublishTrimmed for framework-dependent deployment`
+### フェーズ1: GitHub Actionsワークフローの初期設定
+
+#### コミット: `8962c94` - `:rocket: Add GitHub Actions workflow for Static Web App deployment with .NET 8 Isolated API`
+**日時:** 2025-11-24 17:05:59
+
+**変更内容:**
+- GitHub Actionsワークフローファイル（`.github/workflows/azure-static-web-apps-deploy.yml`）を作成
+- `.NET 8 Isolated API`のデプロイ設定を追加
+- デプロイトラブルシューティングドキュメントを作成
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+98行)
+- `docs/deployment-troubleshooting-static-web-app-api-integration.md` (+349行)
+- `docs/github-actions-setup-checklist.md` (+128行)
+- `docs/github-actions-setup-guide.md` (+115行)
+
+### フェーズ2: 100MB制限への対応（事前ビルドアプローチ）
+
+#### コミット: `08bbe09` - `:zap: Optimize API build size to meet Static Web App 100MB limit`
+**日時:** 2025-11-24 17:11:58
+
+**変更内容:**
+- `dotnet publish`コマンドにサイズ削減フラグを追加
+  - `/p:PublishSingleFile=false` - シングルファイル公開を無効化
+  - `/p:SelfContained=false` - 自己完結型デプロイを無効化（framework-dependent）
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+8行, -1行)
+
+#### コミット: `8146046` - `:zap: Add file cleanup step to reduce API build size`
+**日時:** 2025-11-24 17:18:59
+
+**変更内容:**
+- ビルド後のファイルクリーンアップステップを追加
+  - `.pdb`ファイル（デバッグシンボル）を削除
+  - `.xml`ファイル（XMLドキュメント）を削除
+  - 不要な`.json`ファイルを削除
+  - `runtimes`ディレクトリを削除
+  - サイズ確認ステップを追加
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+14行, -1行)
+
+#### コミット: `75e21a9` - `:bug: Fix API deployment by letting Static Web Apps build the API`
+**日時:** 2025-11-24 17:29:36
+
+**変更内容:**
+- `skip_api_build: false`に変更してStatic Web AppsにAPIをビルドさせる
+- `api_location`を`backend/Receiptfly.Functions`（ソースコードディレクトリ）に変更
+- 事前ビルドステップを削除（Static Web Appsが自動ビルド）
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+7行, -39行)
+
+**結果:** 404エラーが発生し、APIが検知されない問題が発生
+
+#### コミット: `18d0f7a` - `:bug: Revert to pre-build approach and ensure functions.metadata is preserved`
+**日時:** 2025-11-24 17:35:01
+
+**変更内容:**
+- 事前ビルドアプローチに戻す
+- `functions.metadata`ファイルが削除されないようにクリーンアップステップを修正
+- `skip_api_build: true`を維持
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+39行, -5行)
+
+#### コミット: `433b9a9` - `:bug: Fix API deployment for .NET Isolated by letting Static Web Apps build on Windows`
+**日時:** 2025-11-24 17:45:09
+
+**変更内容:**
+- 再度`skip_api_build: false`に変更
+- `.NET Isolated Functions`はWindows上で実行されるため、LinuxでビルドしたAPIが正しく動作しない可能性を考慮
+- Static Web AppsがWindows環境でビルドするように変更
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+5行, -39行)
+
+**結果:** まだ問題が解決せず
+
+#### コミット: `0dcb210` - `:zap: Add build optimization properties to reduce API size for Static Web Apps`
+**日時:** 2025-11-24 17:48:31
+
+**変更内容:**
+- `.csproj`ファイルにビルド最適化プロパティを追加
+  - `PublishSingleFile: false`
+  - `SelfContained: false`
+  - デバッグシンボルとソースファイルを無効化
+
+**変更ファイル:**
+- `backend/Receiptfly.Functions/Receiptfly.Functions.csproj` (+9行)
+
+#### コミット: `f0caac9` - `:zap: Add .funcignore to exclude bin/obj folders from API deployment`
+**日時:** 2025-11-24 17:52:38
+
+**変更内容:**
+- `.funcignore`ファイルを作成
+- `bin/`と`obj/`フォルダを除外してデプロイサイズを削減
+
+**変更ファイル:**
+- `backend/Receiptfly.Functions/.funcignore` (+35行)
+
+#### コミット: `ce43f2b` - `:bug: Fix API deployment by pre-building on Linux and using skip_api_build`
+**日時:** 2025-11-24 17:58:56
+
+**変更内容:**
+- LinuxランナーでAPIを事前ビルド（264MB → 最適化後）
+- `skip_api_build: true`を使用してStatic Web Appsのビルドプロセス100MB制限を回避
+- 不要なファイル（`.pdb`、`.xml`、`runtimes`）を削除してサイズを削減
+- GitHub Issue #1034を参照
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+38行, -5行)
+
+#### コミット: `492a2e8` - `:bug: Preserve worker.config.json and extensions.json in API build`
+**日時:** 2025-11-24 18:07:37
+
+**変更内容:**
+- `worker.config.json`と`extensions.json`を削除対象から除外
+- これらのファイルは`.NET Isolated Functions`が正しく動作するために必要
+- 必要なファイルが存在することを確認する検証ステップを追加
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+4行, -1行)
+
+#### コミット: `520840b` - `:bug: Optimize runtimes folder instead of deleting it`
+**日時:** 2025-11-24 18:24:03
+
+**変更内容:**
+- `runtimes`フォルダを完全に削除するのではなく、最適化
+- `win-x64`、`win-x86`、`win`のruntimesを保持
+- その他のruntimesを削除してスペースを節約
+- Azure Static Web Apps（Windows）でネイティブ依存関係が動作することを確保しつつ、100MB制限を満たす
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+11行, -1行)
+
+**結果:** デプロイは成功したが、APIが404を返す問題が継続
+
+### フェーズ3: Windowsランナーでのビルド試行
+
+#### コミット: `e51d0d8` - `:bug: Build API on Windows runner for Static Web Apps`
+**日時:** 2025-11-24 18:36:27
+
+**変更内容:**
+- WindowsランナーでAPIをビルドする別ジョブ（`build_api_job`）を作成
+- アーティファクトをアップロード/ダウンロードしてジョブ間で共有
+- Windowsネイティブ依存関係（PDFtoImage）が正しく動作することを確保
+- LinuxでビルドしたAPIがWindowsランタイムで失敗する問題に対処
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+48行, -22行)
+
+**結果:** デプロイは成功したが、APIが404を返す問題が継続
+
+#### コミット: `46b828d` - `:bug: Fix API artifacts download path`
+**日時:** 2025-11-24 18:44:45
+
+**変更内容:**
+- アーティファクトのダウンロードパスを修正
+- `frontend/receiptfly-web/` → `frontend/receiptfly-web/api`
+- ダウンロード後に`api`フォルダが存在することを確保
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+1行, -1行)
+
+**結果:** デプロイは成功したが、APIが404を返す問題が継続
+
+### フェーズ4: Freeプラン対応（根本原因の解決）
+
+#### コミット: `d6381ad` - `:bug: Change skip_api_build to false for Free plan compatibility`
+**日時:** 2025-11-24 20:21:20
+
+**変更内容:**
+- **重要な発見:** Freeプランでは「Bring your own API」がサポートされていない
+- `skip_api_build: true`はAPIを「Bring your own API」として扱う
+- `skip_api_build: false`に変更してManaged functionsを使用
+- 事前ビルドAPIジョブを削除（Static Web Appsが自動ビルド）
+- `api_location`をソースコードディレクトリに更新
+
+**変更ファイル:**
+- `.github/workflows/azure-static-web-apps-deploy.yml` (+8行, -85行)
+
+**結果:** デプロイは成功したが、100MB制限エラーが発生
+
+### フェーズ5: ビルドサイズの最適化（最終対応）
+
+#### コミット: `9048783` - `:zap: Optimize build size for Static Web Apps 100MB limit`
+**日時:** 2025-11-24 20:31:45
+
+**変更内容:**
+- `PublishTrimmed: true`と`TrimMode: partial`を追加して未使用コードを削除
+- 未使用のPostgreSQLパッケージ（`Npgsql.EntityFrameworkCore.PostgreSQL`）を削除
+- デバッガーとメタデータ削減設定を追加
+- `.funcignore`を拡張して不要なファイルを除外
+- ApplicationとInfrastructureプロジェクトにも最適化設定を追加
+
+**変更ファイル:**
+- `backend/Receiptfly.Functions/Receiptfly.Functions.csproj` (+11行, -1行)
+- `backend/Receiptfly.Application/Receiptfly.Application.csproj` (+5行)
+- `backend/Receiptfly.Infrastructure/Receiptfly.Infrastructure.csproj` (+5行)
+- `backend/Receiptfly.Functions/.funcignore` (+30行)
+
+**結果:** `PublishTrimmed`エラーが発生
+
+#### コミット: `4bf9aea` - `:zap: Remove unused PDFtoImage and SkiaSharp packages from API Functions`
+**日時:** 2025-11-24 20:32:25
+
+**変更内容:**
+- `PDFtoImage`と`SkiaSharp`パッケージを削除
+- これらは廃止予定の関数でのみ使用されており、実際のPDF処理はProcessing Functionで実行
+- これらのパッケージを削除することでビルドサイズを大幅に削減
+- Microsoft Q&Aを参照：100MB制限はAPI functionsのサイズ制限であり、アプリ全体のサイズ制限とは別物
+
+**変更ファイル:**
+- `backend/Receiptfly.Functions/Receiptfly.Functions.csproj` (+3行, -1行)
+- `backend/Receiptfly.Functions/OcrFunctions.cs` (+2行, -2行)
+
+#### コミット: `7dee2dc` - `:bug: Disable PublishTrimmed for framework-dependent deployment`
+**日時:** 2025-11-24 20:37:17
+
+**変更内容:**
+- `PublishTrimmed`を無効化（コメントアウト）
+- `PublishTrimmed`を使用するには`SelfContained: true`が必要
+- Static Web AppsのManaged Functionsではframework-dependent（`SelfContained: false`）が推奨
+- その他の最適化設定（`DebugType: None`、`DebugSymbols: false`など）は維持
+
+**変更ファイル:**
+- `backend/Receiptfly.Functions/Receiptfly.Functions.csproj` (+3行, -3行)
+
+**結果:** デプロイ成功、APIが正常に動作
+
+### その他の関連コミット
+
+#### コミット: `e4a58ab` - `:wrench: Add experimental build outputs to gitignore`
+**日時:** 2025-11-24 18:39:01
+
+**変更内容:**
+- 実験的なビルド出力（`api-test/`、`api/`）を`.gitignore`に追加
+- デプロイ実験中に生成された一時ファイルをGitから除外
+
+**変更ファイル:**
+- `frontend/receiptfly-web/.gitignore` (+2行)
+
+## コミット履歴サマリー
+
+時系列順の主要コミット：
+
+1. **17:05:59** - GitHub Actionsワークフローの初期作成
+2. **17:11:58** - ビルドサイズ最適化フラグの追加
+3. **17:18:59** - ファイルクリーンアップステップの追加
+4. **17:29:36** - Static Web AppsにAPIをビルドさせる試行（失敗）
+5. **17:35:01** - 事前ビルドアプローチに戻す
+6. **17:45:09** - Windowsビルドを試行（失敗）
+7. **17:48:31** - `.csproj`にビルド最適化プロパティを追加
+8. **17:52:38** - `.funcignore`ファイルを作成
+9. **17:58:56** - Linuxでの事前ビルドアプローチに戻す
+10. **18:07:37** - 必要なファイル（`worker.config.json`、`extensions.json`）を保護
+11. **18:24:03** - `runtimes`フォルダの最適化
+12. **18:36:27** - Windowsランナーでのビルド試行
+13. **18:44:45** - アーティファクトダウンロードパスの修正
+14. **20:21:20** - **Freeプラン対応：`skip_api_build: false`に変更（根本原因の解決）**
+15. **20:31:45** - ビルドサイズの包括的最適化
+16. **20:32:25** - 不要パッケージ（PDFtoImage、SkiaSharp）の削除
+17. **20:37:17** - `PublishTrimmed`の無効化（最終修正）
 
 ## 結論
 
