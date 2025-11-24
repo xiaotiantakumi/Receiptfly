@@ -33,3 +33,33 @@ README.md
 # Properties
 Properties/launchSettings.json
 
+# Static Web Apps 100MB制限対応: 不要なファイルを除外
+# デバッグシンボル
+*.pdb
+*.dbg
+
+# XMLドキュメント
+*.xml
+
+# テストファイル
+*.Tests.dll
+*.Test.dll
+
+# ソースファイル
+*.cs
+!Program.cs
+
+# 設定ファイル（必要なもの以外）
+*.config
+!appsettings.json
+!host.json
+
+# 一時ファイル
+*.tmp
+*.temp
+*~
+
+# バックアップファイル
+*.bak
+*.backup
+

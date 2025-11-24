@@ -15,6 +15,14 @@
     <IncludeSource>false</IncludeSource>
     <IncludeNativeLibrariesForSelfExtract>false</IncludeNativeLibrariesForSelfExtract>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+    <!-- 未使用コードの削除（Trim）を有効化 -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <TrimMode>partial</TrimMode>
+    <!-- アセンブリのリンクを有効化 -->
+    <PublishReadyToRun>false</PublishReadyToRun>
+    <!-- メタデータの削減 -->
+    <DebuggerSupport>false</DebuggerSupport>
+    <EnableSGen>false</EnableSGen>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,7 +35,8 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Queues" Version="5.5.3" />
     <PackageReference Include="Azure.Storage.Queues" Version="12.21.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
+    <!-- PostgreSQLは使用していないため削除（サイズ削減） -->
+    <!-- <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" /> -->
     <PackageReference Include="PDFtoImage" Version="5.2.0" />
   </ItemGroup>
 
