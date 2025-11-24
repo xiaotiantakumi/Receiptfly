@@ -35,9 +35,42 @@ jobs:
         with:
           node-version: '20.x'
 
-      # 注意: .NET Isolated FunctionsはWindows上で実行されるため、
-      # skip_api_build: falseにしてStatic Web AppsにWindows環境でビルドさせる必要があります
-      # 事前ビルドではLinux環境でビルドされるため、正しく動作しない可能性があります
+      # API Function App のビルド
+      # .NET Isolated FunctionsはWindows上で実行されるため、事前にビルドしてskip_api_build: trueで使用します
+      # GitHub Issue #1034: 100MB制限を回避するため、事前ビルドでサイズを最適化します
+      - name: Build API Function App
+        working-directory: ./backend/Receiptfly.Functions
+        run: |
+          dotnet restore
+          dotnet build --configuration Release --no-restore
+          dotnet publish \
+            --configuration Release \
+            --output ../../frontend/receiptfly-web/api \
+            /p:PublishSingleFile=false \
+            /p:SelfContained=false \
+            /p:DebugType=None \
+            /p:DebugSymbols=false \
+            /p:IncludeSymbols=false \
+            /p:IncludeSource=false
+      
+      # ビルドサイズを削減するため、不要なファイルを削除
+      - name: Remove unnecessary files to reduce size
+        run: |
+          find frontend/receiptfly-web/api -name "*.pdb" -delete || true
+          find frontend/receiptfly-web/api -name "*.xml" -delete || true
+          find frontend/receiptfly-web/api -name "*.json" -not -name "host.json" -not -name "appsettings.json" -not -name "staticwebapp.config.json" -not -name "functions.metadata" -not -name "*.deps.json" -delete || true
+          find frontend/receiptfly-web/api -type d -name "runtimes" -exec rm -rf {} + || true
+          du -sh frontend/receiptfly-web/api || true
+
+      # host.json を api フォルダにコピー
+      - name: Copy host.json to API folder
+        run: |
+          cp backend/Receiptfly.Functions/host.json frontend/receiptfly-web/api/host.json
+
+      # staticwebapp.config.json を api フォルダにコピー
+      - name: Copy staticwebapp.config.json to API folder
+        run: |
+          cp frontend/receiptfly-web/staticwebapp.config.json frontend/receiptfly-web/api/staticwebapp.config.json
 
       # Frontend の依存関係インストール
       - name: Install Frontend Dependencies
@@ -69,9 +102,9 @@ jobs:
           ###### Repository/Build Configurations ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "frontend/receiptfly-web" # App source code path relative to repository root
-          api_location: "backend/Receiptfly.Functions" # Api source code path relative to repository root - .NET IsolatedはWindows環境でビルドが必要
+          api_location: "frontend/receiptfly-web/api" # Api source code path relative to repository root - 事前にWindows環境でビルド済み
           output_location: "dist" # Built app content directory, relative to app_location
-          skip_api_build: false # .NET IsolatedはWindows環境でビルドする必要があるため、Static Web Appsにビルドさせる
+          skip_api_build: true # APIは事前にWindows環境でビルド済みのため、ビルドをスキップ
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
