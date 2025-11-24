@@ -123,7 +123,6 @@ export const DEFAULT_SETTINGS: Settings = {
   reminderTime: '20:00',
   highAmountAlert: false,
   alertAmount: 10000,
-  riskAlert: true,
 
   // Form Visibility
   formVisibility: {

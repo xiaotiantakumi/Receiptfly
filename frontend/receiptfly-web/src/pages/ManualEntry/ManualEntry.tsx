@@ -24,7 +24,7 @@ export function ManualEntry() {
     { id: '1', name: '', amount: '', category: '', isTaxReturn: false }
   ]);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [createdReceiptId, setCreatedReceiptId] = useState<string | null>(null);
+  const [_createdReceiptId, setCreatedReceiptId] = useState<string | null>(null);
 
   const addItem = () => {
     setItems([...items, { 
