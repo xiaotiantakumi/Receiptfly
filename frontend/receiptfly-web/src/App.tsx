@@ -22,6 +22,7 @@ function App() {
               <Route path="receipts/:id" element={<ReceiptDetail />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="manual-entry" element={<ManualEntry />} />
+              <Route path="manual-entry/:id" element={<ManualEntry />} />
               <Route path="settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>

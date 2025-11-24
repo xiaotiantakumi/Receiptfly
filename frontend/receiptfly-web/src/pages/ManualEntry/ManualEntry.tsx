@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Plus, X } from 'lucide-react';
 import { useReceipts } from '../../context/ReceiptContext';
 import styles from './ManualEntry.module.css';
@@ -14,7 +14,11 @@ interface ItemForm {
 
 export function ManualEntry() {
   const navigate = useNavigate();
-  const { createReceipt } = useReceipts();
+  const { id } = useParams<{ id?: string }>();
+  const { receipts, createReceipt, updateReceipt } = useReceipts();
+  
+  const isEditMode = !!id;
+  const existingReceipt = id ? receipts.find(r => r.id === id) : null;
   
   const [store, setStore] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -25,6 +29,42 @@ export function ManualEntry() {
   ]);
   const [showSuccess, setShowSuccess] = useState(false);
   const [_createdReceiptId, setCreatedReceiptId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(isEditMode);
+
+  // 既存レシートのデータを読み込む
+  useEffect(() => {
+    if (isEditMode && existingReceipt) {
+      setStore(existingReceipt.store || '');
+      // 日付の変換（"2023年11月22日 10:23"形式からISO形式へ）
+      try {
+        const dateStr = existingReceipt.date.replace(/[年月日]/g, '/').replace(/\s+/g, ' ');
+        const parsedDate = new Date(dateStr);
+        if (!isNaN(parsedDate.getTime())) {
+          setDate(parsedDate.toISOString().split('T')[0]);
+        }
+      } catch {
+        // 日付のパースに失敗した場合は現在の日付を使用
+      }
+      setTel(existingReceipt.tel || '');
+      setPaymentMethod(existingReceipt.paymentMethod || '');
+      
+      if (existingReceipt.items && existingReceipt.items.length > 0) {
+        setItems(existingReceipt.items.map((item, index) => ({
+          id: item.id || index.toString(),
+          name: item.name || '',
+          amount: item.amount.toString(),
+          category: item.category || '',
+          isTaxReturn: item.isTaxReturn || false,
+        })));
+      }
+      setLoading(false);
+    } else if (isEditMode && !existingReceipt) {
+      // レシートが見つからない場合
+      setLoading(false);
+      alert('レシートが見つかりませんでした');
+      navigate('/');
+    }
+  }, [isEditMode, existingReceipt, id, navigate]);
 
   const addItem = () => {
     setItems([...items, { 
@@ -56,12 +96,13 @@ export function ManualEntry() {
       return;
     }
 
-    const receipt = {
+    const receiptData = {
       store,
       date: date || new Date().toLocaleDateString('ja-JP'),
       tel,
       paymentMethod,
       items: items.map(item => ({
+        id: item.id,
         name: item.name,
         amount: parseInt(item.amount),
         category: item.category || '未分類',
@@ -70,16 +111,23 @@ export function ManualEntry() {
     };
 
     try {
-      const newReceipt = await createReceipt(receipt);
-      if (newReceipt) {
-        setCreatedReceiptId(newReceipt.id);
+      if (isEditMode && id) {
+        // 既存レシートの更新
+        await updateReceipt(id, receiptData);
         setShowSuccess(true);
       } else {
-        alert('レシートの登録に失敗しました');
+        // 新規レシートの作成
+        const newReceipt = await createReceipt(receiptData);
+        if (newReceipt) {
+          setCreatedReceiptId(newReceipt.id);
+          setShowSuccess(true);
+        } else {
+          alert('レシートの登録に失敗しました');
+        }
       }
     } catch (error) {
-      console.error('Error creating receipt:', error);
-      alert('レシートの登録中にエラーが発生しました');
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} receipt:`, error);
+      alert(`レシートの${isEditMode ? '更新' : '登録'}中にエラーが発生しました`);
     }
   };
 
@@ -110,7 +158,7 @@ export function ManualEntry() {
         >
           <ArrowLeft size={24} />
         </button>
-        <h1 className={styles.title}>手動レシート登録</h1>
+        <h1 className={styles.title}>{isEditMode ? 'レシート編集' : '手動レシート登録'}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className={styles.form}>
@@ -237,8 +285,8 @@ export function ManualEntry() {
           <span className={styles.summaryAmount}>¥{total.toLocaleString()}</span>
         </div>
 
-        <button type="submit" className={styles.submitButton}>
-          レシートを登録
+        <button type="submit" className={styles.submitButton} disabled={loading}>
+          {loading ? '読み込み中...' : isEditMode ? 'レシートを更新' : 'レシートを登録'}
         </button>
       </form>
 
@@ -246,8 +294,8 @@ export function ManualEntry() {
         <div className={styles.successModal}>
           <div className={styles.successContent}>
             <div className={styles.successIcon}>✓</div>
-            <h2>登録完了</h2>
-            <p>レシートを登録しました</p>
+            <h2>{isEditMode ? '更新完了' : '登録完了'}</h2>
+            <p>レシートを{isEditMode ? '更新' : '登録'}しました</p>
             <div className={styles.successButtons}>
               <button 
                 className={styles.continueButton}
