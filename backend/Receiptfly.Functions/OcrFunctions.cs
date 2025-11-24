@@ -31,6 +31,12 @@ namespace Receiptfly.Functions
             _queueServiceClient = new QueueServiceClient(connectionString);
         }
 
+        // ============================================================================
+        // 【廃止予定】この関数は今後廃止予定です。
+        // OCR処理はすべて Processing Function (Receiptfly.ProcessingFunc) で行います。
+        // この関数は後方互換性のために残されていますが、新規実装では使用しないでください。
+        // ============================================================================
+        /*
         [Function("ProcessImage")]
         public async Task<IActionResult> ProcessImage([HttpTrigger(AuthorizationLevel.Function, "post", Route = "ocr")] HttpRequest req)
         {
@@ -125,7 +131,14 @@ namespace Receiptfly.Functions
                 return new ObjectResult(new { error = "OCR処理中にエラーが発生しました。", message = ex.Message }) { StatusCode = 500 };
             }
         }
+        */
 
+        // ============================================================================
+        // 【廃止予定】この関数は今後廃止予定です。
+        // OCR処理はすべて Processing Function (Receiptfly.ProcessingFunc) で行います。
+        // この関数は後方互換性のために残されていますが、新規実装では使用しないでください。
+        // ============================================================================
+        /*
         [Function("ProcessBatchImages")]
         public async Task<IActionResult> ProcessBatchImages([HttpTrigger(AuthorizationLevel.Function, "post", Route = "ocr/batch")] HttpRequest req)
         {
@@ -233,6 +246,7 @@ namespace Receiptfly.Functions
 
             return new OkObjectResult(new { results });
         }
+        */
 
         [Function("QueueOcrProcessing")]
         public async Task<IActionResult> QueueOcrProcessing(
