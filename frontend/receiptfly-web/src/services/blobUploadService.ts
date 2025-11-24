@@ -1,5 +1,4 @@
 import { BlockBlobClient } from '@azure/storage-blob';
-import { generateReceiptId } from '../utils/idGenerator';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:7071/api';
 
@@ -43,8 +42,7 @@ export async function getSasToken(containerName: string, blobName?: string): Pro
 export async function uploadBlob(
   file: File,
   sasUrl: string,
-  onProgress?: (progress: number) => void,
-  metadata?: Record<string, string>
+  onProgress?: (progress: number) => void
 ): Promise<void> {
   const blockBlobClient = new BlockBlobClient(sasUrl);
 
@@ -52,7 +50,6 @@ export async function uploadBlob(
     blobHTTPHeaders: {
       blobContentType: file.type,
     },
-    metadata: metadata,
     onProgress: (ev) => {
       if (onProgress && file.size > 0) {
         const progress = (ev.loadedBytes / file.size) * 100;
@@ -74,27 +71,19 @@ export async function uploadMultipleBlobs(
 
   for (const file of files) {
     try {
-      // レシートIDを生成
-      const receiptId = generateReceiptId();
-      
-      // 元のファイル名から拡張子を取得
-      const extension = file.name.split('.').pop() || '';
-      
-      // ファイル名を receipt-{uuid}.{ext} 形式に変更
-      const blobName = extension ? `${receiptId}.${extension}` : receiptId;
+      // ファイル名にタイムスタンプを追加して一意性を確保
+      const timestamp = Date.now();
+      const uniqueFileName = `${timestamp}-${file.name}`;
+      // blobNameはコンテナ名を含まないファイル名のみ
+      const blobName = uniqueFileName;
 
       // SASトークンを取得
       const sasUrl = await getSasToken(containerName, blobName);
 
-      // メタデータに元のファイル名を保存
-      const metadata = {
-        original_filename: file.name,
-      };
-
       // アップロード
       await uploadBlob(file, sasUrl, (progress) => {
         onProgress?.(file.name, progress);
-      }, metadata);
+      });
 
       // blobPathは後続処理で使用するため、コンテナ名/ファイル名の形式で返す
       results.push({

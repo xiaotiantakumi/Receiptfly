@@ -4,7 +4,7 @@ namespace Receiptfly.Domain.Entities;
 
 public class TransactionItem
 {
-    public string Id { get; set; } = string.Empty;
+    public Guid Id { get; set; }
     public required string Name { get; set; }
     public int Amount { get; set; }
     public bool IsTaxReturn { get; set; }
@@ -15,7 +15,7 @@ public class TransactionItem
     public string? TaxType { get; set; }
     public string? AccountTitle { get; set; }
     
-    public string ReceiptId { get; set; } = string.Empty;
+    public Guid ReceiptId { get; set; }
     
     [JsonIgnore]
     public Receipt? Receipt { get; set; }

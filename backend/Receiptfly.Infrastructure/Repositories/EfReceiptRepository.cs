@@ -14,7 +14,7 @@ public class EfReceiptRepository : IReceiptRepository
         _context = context;
     }
 
-    public async Task<Receipt?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<Receipt?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Receipts
             .Include(r => r.Items)
@@ -44,7 +44,7 @@ public class EfReceiptRepository : IReceiptRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var receipt = await _context.Receipts.FindAsync(new object[] { id }, cancellationToken);
         if (receipt != null)

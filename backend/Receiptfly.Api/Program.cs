@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Receiptfly.Application.Helpers;
 using Receiptfly.Application.Interfaces;
 using Receiptfly.Application.Services;
 using Receiptfly.Infrastructure.Data;
@@ -55,9 +54,6 @@ builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssembly(typeof(Receiptfly.Application.Queries.GetReceipts.GetReceiptsQuery).Assembly);
 });
 
-// Current User Service
-builder.Services.AddScoped<Receiptfly.Application.Interfaces.ICurrentUserService, Receiptfly.Application.Services.MockCurrentUserService>();
-
 // Database Configuration
 var useAzure = builder.Configuration.GetValue<bool>("UseAzure", false);
 var azureConnectionString = builder.Configuration.GetConnectionString("AzureStorage") ?? "UseDevelopmentStorage=true";
@@ -68,10 +64,7 @@ if (useAzure)
     
     // Register Azure Repositories
     builder.Services.AddScoped<IReceiptRepository>(provider => 
-    {
-        var currentUserService = provider.GetRequiredService<Receiptfly.Application.Interfaces.ICurrentUserService>();
-        return new AzureTableReceiptRepository(azureConnectionString, currentUserService);
-    });
+        new AzureTableReceiptRepository(azureConnectionString));
         
     builder.Services.AddScoped<IImageStorageService>(provider => 
         new AzureBlobImageStorageService(azureConnectionString));
@@ -217,13 +210,11 @@ if (!useAzure)
 
         if (!db.Receipts.Any())
         {
-            var userId = "user_default";
             var receipts = new List<Receipt>
             {
                 new Receipt
                 {
-                    Id = IdGenerator.GenerateReceiptId(),
-                    UserId = userId,
+                    Id = Guid.NewGuid(),
                     Store = "スーパーライフ",
                     Date = "2023年11月22日 10:23",
                     Total = 1340,
@@ -234,14 +225,13 @@ if (!useAzure)
                     RegistrationNumber = "T1234567890123",
                     Items = new List<TransactionItem>
                     {
-                        new() { Id = IdGenerator.GenerateTransactionItemId(), ReceiptId = string.Empty, Name = "コピー用紙 A4", Amount = 450, IsTaxReturn = true, Category = "消耗品費", AiCategory = "消耗品費", AiRisk = "Low", Memo = "プリンター用", TaxType = "10%", AccountTitle = "消耗品費" },
-                        new() { Id = IdGenerator.GenerateTransactionItemId(), ReceiptId = string.Empty, Name = "豚肉 300g", Amount = 890, IsTaxReturn = false, Category = "食費", AiCategory = "食費", AiRisk = "Low", TaxType = "8%", AccountTitle = "福利厚生費" }
+                        new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "コピー用紙 A4", Amount = 450, IsTaxReturn = true, Category = "消耗品費", AiCategory = "消耗品費", AiRisk = "Low", Memo = "プリンター用", TaxType = "10%", AccountTitle = "消耗品費" },
+                        new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "豚肉 300g", Amount = 890, IsTaxReturn = false, Category = "食費", AiCategory = "食費", AiRisk = "Low", TaxType = "8%", AccountTitle = "福利厚生費" }
                     }
                 },
                 new Receipt
                 {
-                    Id = IdGenerator.GenerateReceiptId(),
-                    UserId = userId,
+                    Id = Guid.NewGuid(),
                     Store = "セブンイレブン",
                     Date = "2023年11月21日 18:45",
                     Total = 270,
@@ -252,14 +242,13 @@ if (!useAzure)
                     RegistrationNumber = "T9876543210987",
                     Items = new List<TransactionItem>
                     {
-                        new() { Id = IdGenerator.GenerateTransactionItemId(), ReceiptId = string.Empty, Name = "ボールペン", Amount = 120, IsTaxReturn = true, Category = "消耗品費", AiCategory = "事務用品費", AiRisk = "Low", Memo = "クライアント訪問用", TaxType = "10%", AccountTitle = "消耗品費" },
-                        new() { Id = IdGenerator.GenerateTransactionItemId(), ReceiptId = string.Empty, Name = "おにぎり", Amount = 150, IsTaxReturn = false, Category = "食費", AiCategory = "食費", AiRisk = "Low", TaxType = "8%", AccountTitle = "会議費" }
+                        new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "ボールペン", Amount = 120, IsTaxReturn = true, Category = "消耗品費", AiCategory = "事務用品費", AiRisk = "Low", Memo = "クライアント訪問用", TaxType = "10%", AccountTitle = "消耗品費" },
+                        new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "おにぎり", Amount = 150, IsTaxReturn = false, Category = "食費", AiCategory = "食費", AiRisk = "Low", TaxType = "8%", AccountTitle = "会議費" }
                     }
                 },
                 new Receipt
                 {
-                    Id = IdGenerator.GenerateReceiptId(),
-                    UserId = userId,
+                    Id = Guid.NewGuid(),
                     Store = "ユニクロ",
                     Date = "2023年11月20日 14:30",
                     Total = 3990,
@@ -270,16 +259,15 @@ if (!useAzure)
                     RegistrationNumber = "T1122334455667",
                     Items = new List<TransactionItem>
                     {
-                        new() { Id = IdGenerator.GenerateTransactionItemId(), ReceiptId = string.Empty, Name = "ヒートテッククルーネックT", Amount = 1290, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Medium", Memo = "私用？", TaxType = "10%", AccountTitle = "事業主貸" },
-                        new() { Id = IdGenerator.GenerateTransactionItemId(), ReceiptId = string.Empty, Name = "ヒートテックタイツ", Amount = 1290, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Medium", TaxType = "10%", AccountTitle = "事業主貸" },
-                        new() { Id = IdGenerator.GenerateTransactionItemId(), ReceiptId = string.Empty, Name = "3足組ソックス", Amount = 990, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Low", TaxType = "10%", AccountTitle = "事業主貸" },
-                        new() { Id = IdGenerator.GenerateTransactionItemId(), ReceiptId = string.Empty, Name = "ショッピングバッグ", Amount = 420, IsTaxReturn = true, Category = "雑費", AiCategory = "消耗品費", AiRisk = "Low", Memo = "資料持ち運び用", TaxType = "10%", AccountTitle = "消耗品費" }
+                        new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "ヒートテッククルーネックT", Amount = 1290, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Medium", Memo = "私用？", TaxType = "10%", AccountTitle = "事業主貸" },
+                        new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "ヒートテックタイツ", Amount = 1290, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Medium", TaxType = "10%", AccountTitle = "事業主貸" },
+                        new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "3足組ソックス", Amount = 990, IsTaxReturn = false, Category = "被服費", AiCategory = "被服費", AiRisk = "Low", TaxType = "10%", AccountTitle = "事業主貸" },
+                        new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "ショッピングバッグ", Amount = 420, IsTaxReturn = true, Category = "雑費", AiCategory = "消耗品費", AiRisk = "Low", Memo = "資料持ち運び用", TaxType = "10%", AccountTitle = "消耗品費" }
                     }
                 },
                 new Receipt
                 {
-                    Id = IdGenerator.GenerateReceiptId(),
-                    UserId = userId,
+                    Id = Guid.NewGuid(),
                     Store = "タクシー（日本交通）",
                     Date = "2023年11月19日 23:15",
                     Total = 4500,
@@ -290,13 +278,12 @@ if (!useAzure)
                     RegistrationNumber = "T5566778899001",
                     Items = new List<TransactionItem>
                     {
-                        new() { Id = IdGenerator.GenerateTransactionItemId(), ReceiptId = string.Empty, Name = "乗車料金", Amount = 4500, IsTaxReturn = true, Category = "旅費交通費", AiCategory = "旅費交通費", AiRisk = "Medium", Memo = "深夜帰宅（プロジェクト遅延対応）", TaxType = "10%", AccountTitle = "旅費交通費" }
+                        new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "乗車料金", Amount = 4500, IsTaxReturn = true, Category = "旅費交通費", AiCategory = "旅費交通費", AiRisk = "Medium", Memo = "深夜帰宅（プロジェクト遅延対応）", TaxType = "10%", AccountTitle = "旅費交通費" }
                     }
                 },
                 new Receipt
                 {
-                    Id = IdGenerator.GenerateReceiptId(),
-                    UserId = userId,
+                    Id = Guid.NewGuid(),
                     Store = "居酒屋 魚金",
                     Date = "2023年11月18日 20:00",
                     Total = 12000,
@@ -307,7 +294,7 @@ if (!useAzure)
                     RegistrationNumber = "T9988776655443",
                     Items = new List<TransactionItem>
                     {
-                        new() { Id = IdGenerator.GenerateTransactionItemId(), ReceiptId = string.Empty, Name = "飲食代", Amount = 12000, IsTaxReturn = true, Category = "交際費", AiCategory = "接待交際費", AiRisk = "High", Memo = "取引先（株式会社A）との会食", TaxType = "10%", AccountTitle = "接待交際費" }
+                        new() { Id = Guid.NewGuid(), ReceiptId = Guid.Empty, Name = "飲食代", Amount = 12000, IsTaxReturn = true, Category = "交際費", AiCategory = "接待交際費", AiRisk = "High", Memo = "取引先（株式会社A）との会食", TaxType = "10%", AccountTitle = "接待交際費" }
                     }
                 }
             };

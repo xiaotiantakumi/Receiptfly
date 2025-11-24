@@ -21,26 +21,8 @@ public class AzureBlobImageStorageService : IImageStorageService
 
     public async Task<string> SaveImageAsync(Stream imageStream, string fileName, CancellationToken cancellationToken = default)
     {
-        return await SaveImageAsync(imageStream, fileName, null, cancellationToken);
-    }
-
-    public async Task<string> SaveImageAsync(Stream imageStream, string fileName, Dictionary<string, string>? metadata, CancellationToken cancellationToken = default)
-    {
         var blobClient = _containerClient.GetBlobClient(fileName);
-        
-        if (metadata != null && metadata.Count > 0)
-        {
-            var options = new Azure.Storage.Blobs.Models.BlobUploadOptions
-            {
-                Metadata = metadata
-            };
-            await blobClient.UploadAsync(imageStream, options, cancellationToken);
-        }
-        else
-        {
-            await blobClient.UploadAsync(imageStream, overwrite: true, cancellationToken: cancellationToken);
-        }
-        
+        await blobClient.UploadAsync(imageStream, overwrite: true, cancellationToken: cancellationToken);
         return blobClient.Uri.ToString();
     }
 

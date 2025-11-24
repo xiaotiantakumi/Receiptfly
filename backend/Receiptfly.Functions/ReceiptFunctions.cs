@@ -38,13 +38,13 @@ namespace Receiptfly.Functions
         [Function("GetReceipt")]
         public async Task<IActionResult> GetReceipt([HttpTrigger(AuthorizationLevel.Function, "get", Route = "receipts/{id}")] HttpRequest req, string id)
         {
-            if (string.IsNullOrWhiteSpace(id) || !id.StartsWith("receipt-"))
+            if (!Guid.TryParse(id, out var receiptId))
             {
-                return new BadRequestObjectResult("Invalid receipt ID format. Expected format: receipt-{uuid}");
+                return new BadRequestObjectResult("Invalid receipt ID.");
             }
 
             _logger.LogInformation($"Getting receipt {id}.");
-            var receipt = await _mediator.Send(new GetReceiptByIdQuery(id));
+            var receipt = await _mediator.Send(new GetReceiptByIdQuery(receiptId));
 
             if (receipt == null)
             {
@@ -59,13 +59,9 @@ namespace Receiptfly.Functions
             [HttpTrigger(AuthorizationLevel.Function, "put", Route = "receipts/{id}/items/{itemId}")] HttpRequest req,
             string id, string itemId)
         {
-            if (string.IsNullOrWhiteSpace(id) || !id.StartsWith("receipt-"))
+            if (!Guid.TryParse(id, out var receiptId) || !Guid.TryParse(itemId, out var transactionItemId))
             {
-                return new BadRequestObjectResult("Invalid receipt ID format. Expected format: receipt-{uuid}");
-            }
-            if (string.IsNullOrWhiteSpace(itemId) || !itemId.StartsWith("transaction-"))
-            {
-                return new BadRequestObjectResult("Invalid transaction item ID format. Expected format: transaction-{uuid}");
+                return new BadRequestObjectResult("Invalid ID format.");
             }
 
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
@@ -77,8 +73,8 @@ namespace Receiptfly.Functions
             }
 
             var command = new UpdateTransactionItemCommand(
-                id,
-                itemId,
+                receiptId,
+                transactionItemId,
                 request.Name,
                 request.Amount,
                 request.IsTaxReturn,
@@ -105,9 +101,9 @@ namespace Receiptfly.Functions
             [HttpTrigger(AuthorizationLevel.Function, "put", Route = "receipts/{id}")] HttpRequest req,
             string id)
         {
-            if (string.IsNullOrWhiteSpace(id) || !id.StartsWith("receipt-"))
+            if (!Guid.TryParse(id, out var receiptId))
             {
-                return new BadRequestObjectResult("Invalid receipt ID format. Expected format: receipt-{uuid}");
+                return new BadRequestObjectResult("Invalid receipt ID.");
             }
 
             var requestBody = await new StreamReader(req.Body).ReadToEndAsync();
@@ -119,7 +115,7 @@ namespace Receiptfly.Functions
             }
 
             var command = new UpdateReceiptCommand(
-                id,
+                receiptId,
                 request.Store,
                 request.Date,
                 request.Address,
@@ -420,7 +416,7 @@ namespace Receiptfly.Functions
         {
             public required string FileName { get; set; }
             public required bool Success { get; set; }
-            public string? ReceiptId { get; set; }
+            public Guid? ReceiptId { get; set; }
             public object? Receipt { get; set; }
             public string? Error { get; set; }
         }

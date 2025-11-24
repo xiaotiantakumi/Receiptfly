@@ -261,14 +261,6 @@ export function ManualEntry() {
               >
                 ホームへ戻る
               </button>
-              {createdReceiptId && (
-                <button 
-                  className={styles.viewButton}
-                  onClick={() => navigate(`/receipts/${createdReceiptId}`)}
-                >
-                  作成したレシートを表示
-                </button>
-              )}
             </div>
           </div>
         </div>

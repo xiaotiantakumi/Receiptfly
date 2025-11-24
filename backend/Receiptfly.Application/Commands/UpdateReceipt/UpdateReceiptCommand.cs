@@ -3,7 +3,7 @@ using MediatR;
 namespace Receiptfly.Application.Commands.UpdateReceipt;
 
 public record UpdateReceiptCommand(
-    string Id,
+    Guid Id,
     string? Store,
     string? Date,
     string? Address,

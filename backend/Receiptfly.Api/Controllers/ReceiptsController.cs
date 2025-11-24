@@ -30,14 +30,8 @@ public class ReceiptsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetReceipt(string id)
+    public async Task<IActionResult> GetReceipt(Guid id)
     {
-        // バリデーション: receipt-で始まる必要がある
-        if (string.IsNullOrWhiteSpace(id) || !id.StartsWith("receipt-"))
-        {
-            return BadRequest(new { error = "Invalid receipt ID format. Expected format: receipt-{uuid}" });
-        }
-
         var receipt = await _mediator.Send(new GetReceiptByIdQuery(id));
 
         if (receipt == null)
@@ -49,18 +43,8 @@ public class ReceiptsController : ControllerBase
     }
 
     [HttpPut("{id}/items/{itemId}")]
-    public async Task<IActionResult> UpdateItem(string id, string itemId, [FromBody] UpdateItemRequest request)
+    public async Task<IActionResult> UpdateItem(Guid id, Guid itemId, [FromBody] UpdateItemRequest request)
     {
-        // バリデーション
-        if (string.IsNullOrWhiteSpace(id) || !id.StartsWith("receipt-"))
-        {
-            return BadRequest(new { error = "Invalid receipt ID format. Expected format: receipt-{uuid}" });
-        }
-        if (string.IsNullOrWhiteSpace(itemId) || !itemId.StartsWith("transaction-"))
-        {
-            return BadRequest(new { error = "Invalid transaction item ID format. Expected format: transaction-{uuid}" });
-        }
-
         var command = new UpdateTransactionItemCommand(
             id,
             itemId,
@@ -86,14 +70,8 @@ public class ReceiptsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateReceipt(string id, [FromBody] UpdateReceiptRequest request)
+    public async Task<IActionResult> UpdateReceipt(Guid id, [FromBody] UpdateReceiptRequest request)
     {
-        // バリデーション
-        if (string.IsNullOrWhiteSpace(id) || !id.StartsWith("receipt-"))
-        {
-            return BadRequest(new { error = "Invalid receipt ID format. Expected format: receipt-{uuid}" });
-        }
-
         var command = new UpdateReceiptCommand(
             id,
             request.Store,
@@ -260,8 +238,7 @@ public class ReceiptsController : ControllerBase
                         item.Memo,
                         item.TaxType,
                         item.AccountTitle
-                    )).ToList(),
-                    item.FileName
+                    )).ToList()
                 );
 
                 var receipt = await _mediator.Send(createCommand);
@@ -368,7 +345,7 @@ public class ReceiptsController : ControllerBase
     {
         public required string FileName { get; set; }
         public required bool Success { get; set; }
-        public string? ReceiptId { get; set; }
+        public Guid? ReceiptId { get; set; }
         public object? Receipt { get; set; }
         public string? Error { get; set; }
     }
