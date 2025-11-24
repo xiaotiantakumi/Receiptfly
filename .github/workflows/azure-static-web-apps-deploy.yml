@@ -13,53 +13,10 @@ on:
       - dev
 
 jobs:
-  build_api_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    runs-on: windows-latest
-    name: Build API Job
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-          lfs: false
-
-      # .NET SDK のセットアップ
-      - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x'
-
-      # API Function App のビルド
-      # .NET Isolated FunctionsはWindows上で実行されるため、Windowsランナーでビルドする必要があります
-      # GitHub Issue #1034: 100MB制限を回避するため、事前ビルドでサイズを最適化します
-      - name: Build and Publish API
-        working-directory: ./backend/Receiptfly.Functions
-        run: |
-          dotnet restore
-          dotnet build --configuration Release --no-restore
-          dotnet publish `
-            --configuration Release `
-            --output ../../frontend/receiptfly-web/api `
-            /p:PublishSingleFile=false `
-            /p:SelfContained=false `
-            /p:DebugType=None `
-            /p:DebugSymbols=false `
-            /p:IncludeSymbols=false `
-            /p:IncludeSource=false
-
-      # APIアーティファクトをアップロード
-      - name: Upload API artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-artifacts
-          path: frontend/receiptfly-web/api
-          retention-days: 1
-
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
-    needs: build_api_job
     steps:
       - uses: actions/checkout@v4
         with:
@@ -72,44 +29,9 @@ jobs:
         with:
           node-version: '20.x'
 
-      # WindowsランナーでビルドしたAPIアーティファクトをダウンロード
-      - name: Download API artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: api-artifacts
-          path: frontend/receiptfly-web/api
-
-      # ビルドサイズを削減するため、不要なファイルを削除
-      # 注意: worker.config.json, extensions.json, .azurefunctionsフォルダは削除しない
-      # Windowsランナーでビルドしたため、runtimes/win* のみが含まれているはず
-      - name: Remove unnecessary files to reduce size
-        run: |
-          find frontend/receiptfly-web/api -name "*.pdb" -delete || true
-          find frontend/receiptfly-web/api -name "*.xml" -delete || true
-          find frontend/receiptfly-web/api -name "*.json" -not -name "host.json" -not -name "appsettings.json" -not -name "staticwebapp.config.json" -not -name "functions.metadata" -not -name "*.deps.json" -not -name "worker.config.json" -not -name "extensions.json" -delete || true
-          
-          # runtimesフォルダの最適化: Windows用以外を削除（念のため）
-          if [ -d "frontend/receiptfly-web/api/runtimes" ]; then
-            find frontend/receiptfly-web/api/runtimes -mindepth 1 -maxdepth 1 -type d -not -name "win-x64" -not -name "win-x86" -not -name "win" -exec rm -rf {} +
-          fi
-          
-          du -sh frontend/receiptfly-web/api || true
-          echo "=== 必要なファイルの確認 ==="
-          ls -la frontend/receiptfly-web/api/ | grep -E "(host.json|functions.metadata|worker.config|extensions.json|Receiptfly.Functions.dll|\.azurefunctions)" || true
-          if [ -d "frontend/receiptfly-web/api/runtimes" ]; then
-            echo "=== runtimesフォルダの内容 ==="
-            ls -F frontend/receiptfly-web/api/runtimes/
-          fi
-
-      # host.json を api フォルダにコピー
-      - name: Copy host.json to API folder
-        run: |
-          cp backend/Receiptfly.Functions/host.json frontend/receiptfly-web/api/host.json
-
-      # staticwebapp.config.json を api フォルダにコピー
-      - name: Copy staticwebapp.config.json to API folder
-        run: |
-          cp frontend/receiptfly-web/staticwebapp.config.json frontend/receiptfly-web/api/staticwebapp.config.json
+      # Freeプランでは「Bring your own API」がサポートされていないため、
+      # APIの事前ビルドとアーティファクトのダウンロードは不要です
+      # Static Web Appsが自動的にAPIをビルドします（Managed functionsとして）
 
       # Frontend の依存関係インストール
       - name: Install Frontend Dependencies
@@ -129,8 +51,9 @@ jobs:
           cp frontend/receiptfly-web/staticwebapp.config.json frontend/receiptfly-web/dist/staticwebapp.config.json
 
       # Azure Static Web Apps へのデプロイ
-      # 注意: skip_api_build: false に変更して、Static Web AppsにAPIをビルドさせる
-      # .NET Isolated Functionsの場合、skip_api_build: trueでは正しく動作しない可能性がある
+      # Freeプランでは「Bring your own API」がサポートされていないため、
+      # skip_api_build: false にして、Static Web AppsにAPIをビルドさせる必要があります
+      # これにより、APIは「Managed functions」として扱われます
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -141,9 +64,9 @@ jobs:
           ###### Repository/Build Configurations ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "frontend/receiptfly-web" # App source code path relative to repository root
-          api_location: "frontend/receiptfly-web/api" # Api source code path relative to repository root - 事前にWindows環境でビルド済み
+          api_location: "backend/Receiptfly.Functions" # Api source code path relative to repository root - Static Web Appsがビルドします
           output_location: "dist" # Built app content directory, relative to app_location
-          skip_api_build: true # APIは事前にWindows環境でビルド済みのため、ビルドをスキップ
+          skip_api_build: false # FreeプランではManaged functionsとしてビルドする必要があります
           ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
