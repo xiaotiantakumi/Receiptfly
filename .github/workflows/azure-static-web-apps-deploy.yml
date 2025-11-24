@@ -36,12 +36,19 @@ jobs:
           node-version: '20.x'
 
       # API Function App のビルド
+      # Static Web Appの100MB制限に対応するため、サイズを最適化
       - name: Build API Function App
         working-directory: ./backend/Receiptfly.Functions
         run: |
           dotnet restore
           dotnet build --configuration Release --no-restore
-          dotnet publish --configuration Release --output ../../frontend/receiptfly-web/api
+          dotnet publish \
+            --configuration Release \
+            --output ../../frontend/receiptfly-web/api \
+            /p:PublishSingleFile=false \
+            /p:IncludeNativeLibrariesForSelfExtract=false \
+            /p:EnableCompressionInSingleFile=false \
+            /p:SelfContained=false
 
       # host.json を api フォルダにコピー
       - name: Copy host.json to API folder
