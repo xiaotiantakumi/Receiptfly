@@ -13,10 +13,10 @@ on:
       - dev
 
 jobs:
-  build_and_deploy_job:
+  build_api_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    runs-on: ubuntu-latest
-    name: Build and Deploy Job
+    runs-on: windows-latest
+    name: Build API Job
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,40 +29,66 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # API Function App のビルド
+      # .NET Isolated FunctionsはWindows上で実行されるため、Windowsランナーでビルドする必要があります
+      # GitHub Issue #1034: 100MB制限を回避するため、事前ビルドでサイズを最適化します
+      - name: Build and Publish API
+        working-directory: ./backend/Receiptfly.Functions
+        run: |
+          dotnet restore
+          dotnet build --configuration Release --no-restore
+          dotnet publish `
+            --configuration Release `
+            --output ../../frontend/receiptfly-web/api `
+            /p:PublishSingleFile=false `
+            /p:SelfContained=false `
+            /p:DebugType=None `
+            /p:DebugSymbols=false `
+            /p:IncludeSymbols=false `
+            /p:IncludeSource=false
+
+      # APIアーティファクトをアップロード
+      - name: Upload API artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-artifacts
+          path: frontend/receiptfly-web/api
+          retention-days: 1
+
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+    needs: build_api_job
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          lfs: false
+
       # Node.js のセットアップ
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20.x'
 
-      # API Function App のビルド
-      # .NET Isolated FunctionsはWindows上で実行されるため、事前にビルドしてskip_api_build: trueで使用します
-      # GitHub Issue #1034: 100MB制限を回避するため、事前ビルドでサイズを最適化します
-      - name: Build API Function App
-        working-directory: ./backend/Receiptfly.Functions
-        run: |
-          dotnet restore
-          dotnet build --configuration Release --no-restore
-          dotnet publish \
-            --configuration Release \
-            --output ../../frontend/receiptfly-web/api \
-            /p:PublishSingleFile=false \
-            /p:SelfContained=false \
-            /p:DebugType=None \
-            /p:DebugSymbols=false \
-            /p:IncludeSymbols=false \
-            /p:IncludeSource=false
-      
+      # WindowsランナーでビルドしたAPIアーティファクトをダウンロード
+      - name: Download API artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: api-artifacts
+          path: frontend/receiptfly-web/
+
       # ビルドサイズを削減するため、不要なファイルを削除
       # 注意: worker.config.json, extensions.json, .azurefunctionsフォルダは削除しない
-      # また、Windows環境で動作するため、runtimes/win* は保持し、それ以外のOS用ランタイムを削除する
+      # Windowsランナーでビルドしたため、runtimes/win* のみが含まれているはず
       - name: Remove unnecessary files to reduce size
         run: |
           find frontend/receiptfly-web/api -name "*.pdb" -delete || true
           find frontend/receiptfly-web/api -name "*.xml" -delete || true
           find frontend/receiptfly-web/api -name "*.json" -not -name "host.json" -not -name "appsettings.json" -not -name "staticwebapp.config.json" -not -name "functions.metadata" -not -name "*.deps.json" -not -name "worker.config.json" -not -name "extensions.json" -delete || true
           
-          # runtimesフォルダの最適化: Windows用以外を削除
+          # runtimesフォルダの最適化: Windows用以外を削除（念のため）
           if [ -d "frontend/receiptfly-web/api/runtimes" ]; then
             find frontend/receiptfly-web/api/runtimes -mindepth 1 -maxdepth 1 -type d -not -name "win-x64" -not -name "win-x86" -not -name "win" -exec rm -rf {} +
           fi
