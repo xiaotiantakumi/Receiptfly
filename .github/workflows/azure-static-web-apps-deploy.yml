@@ -55,15 +55,25 @@ jobs:
       
       # ビルドサイズを削減するため、不要なファイルを削除
       # 注意: worker.config.json, extensions.json, .azurefunctionsフォルダは削除しない
+      # また、Windows環境で動作するため、runtimes/win* は保持し、それ以外のOS用ランタイムを削除する
       - name: Remove unnecessary files to reduce size
         run: |
           find frontend/receiptfly-web/api -name "*.pdb" -delete || true
           find frontend/receiptfly-web/api -name "*.xml" -delete || true
           find frontend/receiptfly-web/api -name "*.json" -not -name "host.json" -not -name "appsettings.json" -not -name "staticwebapp.config.json" -not -name "functions.metadata" -not -name "*.deps.json" -not -name "worker.config.json" -not -name "extensions.json" -delete || true
-          find frontend/receiptfly-web/api -type d -name "runtimes" -exec rm -rf {} + || true
+          
+          # runtimesフォルダの最適化: Windows用以外を削除
+          if [ -d "frontend/receiptfly-web/api/runtimes" ]; then
+            find frontend/receiptfly-web/api/runtimes -mindepth 1 -maxdepth 1 -type d -not -name "win-x64" -not -name "win-x86" -not -name "win" -exec rm -rf {} +
+          fi
+          
           du -sh frontend/receiptfly-web/api || true
           echo "=== 必要なファイルの確認 ==="
           ls -la frontend/receiptfly-web/api/ | grep -E "(host.json|functions.metadata|worker.config|extensions.json|Receiptfly.Functions.dll|\.azurefunctions)" || true
+          if [ -d "frontend/receiptfly-web/api/runtimes" ]; then
+            echo "=== runtimesフォルダの内容 ==="
+            ls -F frontend/receiptfly-web/api/runtimes/
+          fi
 
       # host.json を api フォルダにコピー
       - name: Copy host.json to API folder
