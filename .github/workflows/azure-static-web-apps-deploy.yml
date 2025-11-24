@@ -54,13 +54,16 @@ jobs:
             /p:IncludeSource=false
       
       # ビルドサイズを削減するため、不要なファイルを削除
+      # 注意: worker.config.json, extensions.json, .azurefunctionsフォルダは削除しない
       - name: Remove unnecessary files to reduce size
         run: |
           find frontend/receiptfly-web/api -name "*.pdb" -delete || true
           find frontend/receiptfly-web/api -name "*.xml" -delete || true
-          find frontend/receiptfly-web/api -name "*.json" -not -name "host.json" -not -name "appsettings.json" -not -name "staticwebapp.config.json" -not -name "functions.metadata" -not -name "*.deps.json" -delete || true
+          find frontend/receiptfly-web/api -name "*.json" -not -name "host.json" -not -name "appsettings.json" -not -name "staticwebapp.config.json" -not -name "functions.metadata" -not -name "*.deps.json" -not -name "worker.config.json" -not -name "extensions.json" -delete || true
           find frontend/receiptfly-web/api -type d -name "runtimes" -exec rm -rf {} + || true
           du -sh frontend/receiptfly-web/api || true
+          echo "=== 必要なファイルの確認 ==="
+          ls -la frontend/receiptfly-web/api/ | grep -E "(host.json|functions.metadata|worker.config|extensions.json|Receiptfly.Functions.dll|\.azurefunctions)" || true
 
       # host.json を api フォルダにコピー
       - name: Copy host.json to API folder
