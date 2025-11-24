@@ -3,9 +3,10 @@
   "configurations": {
     "receiptfly": {
       "appLocation": ".",
-      "apiLocation": "../../backend/Receiptfly.Functions",
+      "apiLocation": "api",
       "outputLocation": "dist",
       "apiLanguage": "dotnet-isolated",
+      "apiVersion": "8.0",
       "appBuildCommand": "npm run build",
       "appDevserverUrl": "http://localhost:5173"
     }
