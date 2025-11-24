@@ -13,7 +13,7 @@ RESOURCE_GROUP=$2
 APP_NAME="receiptfly"
 
 echo "=========================================="
-echo "Receiptfly Static Web App デプロイ"
+echo "Receiptfly Static Web App バックエンドAPI デプロイ"
 echo "=========================================="
 echo "環境名: $ENV"
 echo "リソースグループ: $RESOURCE_GROUP"
@@ -43,9 +43,15 @@ fi
 # プロジェクトディレクトリのパスを取得
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+API_FUNCTION_DIR="${PROJECT_ROOT}/backend/Receiptfly.Functions"
 FRONTEND_DIR="${PROJECT_ROOT}/frontend/receiptfly-web"
 
 # プロジェクトディレクトリの存在確認
+if [ ! -d "$API_FUNCTION_DIR" ]; then
+    echo "[$(date +%H:%M:%S)] ❌ API Function App のディレクトリが見つかりません: $API_FUNCTION_DIR"
+    exit 1
+fi
+
 if [ ! -d "$FRONTEND_DIR" ]; then
     echo "[$(date +%H:%M:%S)] ❌ Frontend のディレクトリが見つかりません: $FRONTEND_DIR"
     exit 1
@@ -78,6 +84,35 @@ if [ -z "$DEPLOYMENT_TOKEN" ]; then
     exit 1
 fi
 
+# API Function App をビルド
+echo ""
+echo "[$(date +%H:%M:%S)] API Function App をビルド中..."
+cd "$API_FUNCTION_DIR"
+
+# 一時的なapiフォルダを作成
+API_BUILD_DIR="${FRONTEND_DIR}/api"
+rm -rf "$API_BUILD_DIR"
+mkdir -p "$API_BUILD_DIR"
+
+# Function Appをビルドしてapiフォルダに配置
+dotnet publish --configuration Release --output "$API_BUILD_DIR" /p:PublishSingleFile=false /p:IncludeNativeLibrariesForSelfExtract=true
+
+if [ $? -ne 0 ]; then
+    echo "[$(date +%H:%M:%S)] ❌ API Function App のビルドに失敗しました"
+    exit 1
+fi
+
+# host.jsonをapiフォルダにコピー
+cp "${API_FUNCTION_DIR}/host.json" "${API_BUILD_DIR}/host.json"
+
+# staticwebapp.config.jsonをapiフォルダにもコピー（API統合に必要）
+if [ -f "${FRONTEND_DIR}/staticwebapp.config.json" ]; then
+    cp "${FRONTEND_DIR}/staticwebapp.config.json" "${API_BUILD_DIR}/staticwebapp.config.json"
+    echo "[$(date +%H:%M:%S)] staticwebapp.config.jsonをapiフォルダにコピーしました"
+fi
+
+echo "[$(date +%H:%M:%S)] ✅ API Function App のビルドが完了しました"
+
 # Frontend をビルド
 echo ""
 echo "[$(date +%H:%M:%S)] Frontend をビルド中..."
@@ -94,12 +129,11 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# Static Web AppのバックエンドAPIとして統合するため、APIベースURLは/apiを使用
+# Static Web AppのバックエンドAPIとしてデプロイするため、APIベースURLは/apiを使用
 echo "[$(date +%H:%M:%S)] API Base URL: /api (Static Web AppのバックエンドAPIとして統合)"
 
 # 環境変数を設定してビルド実行
-# 注意: この環境変数は .env ファイルの値を上書きします
-# ローカル開発時は .env ファイルの値（localhost）が使用されます
+# Static Web AppのバックエンドAPIとして統合するため、/apiを使用
 export VITE_API_BASE_URL="/api"
 npm run build
 
@@ -108,13 +142,24 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Static Web App にデプロイ
-echo ""
-echo "[$(date +%H:%M:%S)] Static Web App にデプロイ中..."
-echo "[$(date +%H:%M:%S)] 注意: APIは別スクリプト（deploy-staticwebapp-api.sh）でデプロイしてください"
+# staticwebapp.config.jsonをdistフォルダにコピー（API統合に必要）
+if [ -f "${FRONTEND_DIR}/staticwebapp.config.json" ]; then
+    cp "${FRONTEND_DIR}/staticwebapp.config.json" "${FRONTEND_DIR}/dist/staticwebapp.config.json"
+    echo "[$(date +%H:%M:%S)] staticwebapp.config.jsonをdistフォルダにコピーしました"
+fi
 
-# Frontendのみをデプロイ（API統合は別スクリプトで行う）
-swa deploy dist \
+# Static Web App にデプロイ（APIを含む）
+echo ""
+echo "[$(date +%H:%M:%S)] Static Web App にデプロイ中（API統合）..."
+
+# swa-cli.config.json を使わず、明示的にすべてのパラメータを指定
+# 注意: FRONTEND_DIR から実行する必要がある（apiLocation が相対パスのため）
+# --api-language と --api-version を明示的に指定（swa deploy のヘルプで確認済み）
+swa deploy \
+    --app-location dist \
+    --api-location api \
+    --api-language dotnet-isolated \
+    --api-version 8.0 \
     --deployment-token "$DEPLOYMENT_TOKEN" \
     --env production \
     --no-use-keychain
@@ -122,6 +167,12 @@ swa deploy dist \
 if [ $? -ne 0 ]; then
     echo "[$(date +%H:%M:%S)] ❌ Static Web App のデプロイに失敗しました"
     exit 1
+fi
+
+# apiフォルダをクリーンアップ（デプロイ完了後）
+# 注意: デプロイが成功した場合のみ削除
+if [ $? -eq 0 ]; then
+    rm -rf "$API_BUILD_DIR"
 fi
 
 # Default hostname を取得
@@ -137,5 +188,6 @@ echo "デプロイ完了"
 echo "=========================================="
 echo ""
 echo "Static Web App URL: https://${DEFAULT_HOSTNAME}"
+echo "API Endpoint: https://${DEFAULT_HOSTNAME}/api"
 echo ""
 

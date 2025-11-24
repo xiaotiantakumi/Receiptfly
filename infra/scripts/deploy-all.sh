@@ -45,28 +45,28 @@ else
     fi
 fi
 
-# 2. Function Apps のデプロイ
+# 2. Processing Function App のデプロイ
 echo ""
 echo "=========================================="
-echo "ステップ 2: Function Apps のデプロイ"
+echo "ステップ 2: Processing Function App のデプロイ"
 echo "=========================================="
 echo ""
 
 "$SCRIPT_DIR/deploy-functions.sh" "$ENV" "$RESOURCE_GROUP"
 
 if [ $? -ne 0 ]; then
-    echo "[$(date +%H:%M:%S)] ❌ Function Apps のデプロイに失敗しました"
+    echo "[$(date +%H:%M:%S)] ❌ Processing Function App のデプロイに失敗しました"
     exit 1
 fi
 
-# 3. Static Web App のデプロイ
+# 3. Static Web App のデプロイ（API統合）
 echo ""
 echo "=========================================="
-echo "ステップ 3: Static Web App のデプロイ"
+echo "ステップ 3: Static Web App のデプロイ（API統合）"
 echo "=========================================="
 echo ""
 
-"$SCRIPT_DIR/deploy-staticwebapp.sh" "$ENV" "$RESOURCE_GROUP"
+"$SCRIPT_DIR/deploy-staticwebapp-api.sh" "$ENV" "$RESOURCE_GROUP"
 
 if [ $? -ne 0 ]; then
     echo "[$(date +%H:%M:%S)] ❌ Static Web App のデプロイに失敗しました"
@@ -80,8 +80,8 @@ echo "=========================================="
 echo ""
 echo "デプロイされたリソース:"
 echo "  - Function Apps:"
-echo "    - API: func-receiptfly-api-${ENV}-001"
 echo "    - Processing: func-receiptfly-processing-${ENV}-001"
+echo "    - API: Static Web AppのバックエンドAPIとして統合"
 echo "  - Static Web App: swa-receiptfly-${ENV}-001"
 echo ""
 echo "検証を実行するには、以下のコマンドを実行してください:"
