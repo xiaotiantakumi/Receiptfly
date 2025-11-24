@@ -59,14 +59,12 @@ module functions 'modules/functions.bicep' = {
     storageAccountName: storage.outputs.storageAccountName
     appInsightsConnectionString: monitoring.outputs.appInsightsConnectionString
     keyVaultName: keyvault.outputs.keyVaultName
-    staticWebAppHostname: staticwebapp.outputs.staticWebAppDefaultHostname
   }
 }
 
 
 output storageAccountName string = storage.outputs.storageAccountName
 output keyVaultName string = keyvault.outputs.keyVaultName
-output apiFunctionAppName string = functions.outputs.apiFunctionAppName
 output processingFunctionAppName string = functions.outputs.processingFunctionAppName
 output staticWebAppName string = staticwebapp.outputs.staticWebAppName
 output staticWebAppDefaultHostname string = staticwebapp.outputs.staticWebAppDefaultHostname

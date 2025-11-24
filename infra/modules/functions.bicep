@@ -18,93 +18,17 @@ param appInsightsConnectionString string
 @description('Key Vault name')
 param keyVaultName string
 
-@description('Static Web App default hostname for CORS configuration')
-param staticWebAppHostname string = ''
+// ============================================================================
+// 【削除】API Function AppはStatic Web AppのバックエンドAPIとして統合されました
+// このリソース定義は削除されました。Static Web AppのバックエンドAPIとして
+// デプロイスクリプト経由でデプロイされます。
+// ============================================================================
 
-var apiFunctionAppName = 'func-${toLower(appName)}-api-${env}-001'
 var processingFunctionAppName = 'func-${toLower(appName)}-processing-${env}-001'
 
-// CORS設定用のallowedOriginsを構築
-// Static Web AppのURLとワイルドカードパターンを含める
-var corsAllowedOrigins = staticWebAppHostname != '' 
-  ? [
-      'https://${staticWebAppHostname}'
-      'https://*.azurestaticapps.net'
-    ]
-  : [
-      'https://*.azurestaticapps.net'
-    ]
 var storageBlobDataContributorRoleId = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 var storageTableDataContributorRoleId = '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3'
 var keyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
-
-resource apiFunctionApp 'Microsoft.Web/sites@2024-04-01' = {
-  name: apiFunctionAppName
-  location: location
-  kind: 'functionapp,linux'
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    httpsOnly: true
-    siteConfig: {
-      appSettings: [
-        {
-          name: 'FUNCTIONS_EXTENSION_VERSION'
-          value: '~4'
-        }
-        {
-          name: 'FUNCTIONS_WORKER_RUNTIME'
-          value: 'dotnet-isolated'
-        }
-        {
-          name: 'AzureWebJobsStorage__accountName'
-          value: storageAccountName
-        }
-        {
-          name: 'AzureWebJobsStorage__credential'
-          value: 'managedidentity'
-        }
-        {
-          name: 'AzureStorage__accountName'
-          value: storageAccountName
-        }
-        {
-          name: 'AzureStorage__credential'
-          value: 'managedidentity'
-        }
-        {
-          name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-          value: appInsightsConnectionString
-        }
-        {
-          name: 'GoogleCloud:ApiKey'
-          value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=GoogleCloudApiKey)'
-        }
-        {
-          name: 'Gemini:ApiKey'
-          value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=GeminiApiKey)'
-        }
-        {
-          name: 'UseAzure'
-          value: 'true'
-        }
-      ]
-      minTlsVersion: '1.2'
-    }
-  }
-}
-
-resource apiFunctionAppConfig 'Microsoft.Web/sites/config@2024-04-01' = {
-  parent: apiFunctionApp
-  name: 'web'
-  properties: {
-    cors: {
-      allowedOrigins: corsAllowedOrigins
-      supportCredentials: false
-    }
-  }
-}
 
 resource processingFunctionApp 'Microsoft.Web/sites@2024-04-01' = {
   name: processingFunctionAppName
@@ -168,7 +92,9 @@ resource processingFunctionAppConfig 'Microsoft.Web/sites/config@2024-04-01' = {
   name: 'web'
   properties: {
     cors: {
-      allowedOrigins: corsAllowedOrigins
+      allowedOrigins: [
+        'https://*.azurestaticapps.net'
+      ]
       supportCredentials: false
     }
   }
@@ -182,28 +108,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2024-11-01' existing = {
   name: keyVaultName
 }
 
-var apiFunctionPrincipalId = apiFunctionApp.identity.principalId
 var processingFunctionPrincipalId = processingFunctionApp.identity.principalId
-
-resource apiFunctionStorageBlobRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, apiFunctionApp.name, storageBlobDataContributorRoleId)
-  scope: storageAccount
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageBlobDataContributorRoleId)
-    principalId: apiFunctionPrincipalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource apiFunctionStorageTableRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(storageAccount.id, apiFunctionApp.name, storageTableDataContributorRoleId)
-  scope: storageAccount
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', storageTableDataContributorRoleId)
-    principalId: apiFunctionPrincipalId
-    principalType: 'ServicePrincipal'
-  }
-}
 
 resource processingFunctionStorageBlobRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(storageAccount.id, processingFunctionApp.name, storageBlobDataContributorRoleId)
@@ -225,15 +130,7 @@ resource processingFunctionStorageTableRoleAssignment 'Microsoft.Authorization/r
   }
 }
 
-resource apiFunctionKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(keyVault.id, apiFunctionApp.name, keyVaultSecretsUserRoleId)
-  scope: keyVault
-  properties: {
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUserRoleId)
-    principalId: apiFunctionPrincipalId
-    principalType: 'ServicePrincipal'
-  }
-}
+// API Function Appのロール割り当ては削除（Static Web AppのバックエンドAPIとして統合）
 
 resource processingFunctionKeyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(keyVault.id, processingFunctionApp.name, keyVaultSecretsUserRoleId)
@@ -245,8 +142,6 @@ resource processingFunctionKeyVaultRoleAssignment 'Microsoft.Authorization/roleA
   }
 }
 
-output apiFunctionAppName string = apiFunctionApp.name
 output processingFunctionAppName string = processingFunctionApp.name
-output apiFunctionPrincipalId string = apiFunctionApp.identity.principalId
 output processingFunctionPrincipalId string = processingFunctionApp.identity.principalId
 
